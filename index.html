@@ -1,0 +1,3544 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex, nofollow">
+<!-- The phone's own bar above the page takes the page's ground, so the page
+     runs up to the top of the screen instead of under a white strip. -->
+<meta name="theme-color" content="#f0f0f0">
+<title>Status</title>
+<script>
+/* Applied BEFORE the first paint: a phone on a dark system would otherwise
+   flash the light page while the rest of the script loads. */
+(function(){
+  var m = "system";
+  try { m = localStorage.getItem("rv.theme") || "system"; } catch(e){}
+  var dark = m === "night" || (m !== "day" && window.matchMedia &&
+             matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.theme = dark ? "night" : "day";
+  var tc = document.querySelector('meta[name="theme-color"]');
+  if(tc) tc.content = dark ? "#353535" : "#f0f0f0";
+  /* A REMEMBERED SIGN-IN OPENS BY ITSELF, so the sign-in card is not shown
+     for the second it takes: it used to flash up and vanish on every visit.
+     Taken off again if that sign-in does not open anything. */
+  try { if(localStorage.getItem("rv.pass")) document.documentElement.dataset.auto = "1"; }
+  catch(e){}
+})();
+</script>
+<!--
+  This page is public, and it holds nothing. Everything it shows is fetched as
+  a sealed block and opened here, in the browser, with a passphrase that is
+  never sent anywhere. Reading this source tells you how the lock works and
+  nothing about the lab.
+
+  EVERY COLOUR AND EVERY MEASUREMENT BELOW COMES FROM THE APP. The day values
+  are Widgets/ui_style.py, the night values are what Widgets/night_theme.py
+  translates each of them to, read out of the app rather than guessed, so the
+  page is the same component set the desktop windows are built from: 3 px
+  corners, 1 px #cccccc hairlines, the #f9f9f9 card, the navy #003366 title
+  over a grey abstract, bold-black section headers over a 1 px rule, the blue
+  and brick and gold status pills, the #b3c8de progress fill, and the line
+  plot's own navy.
+
+  The publisher is Remote_View/publish.py on the lab PC.
+-->
+<style>
+ /* ── the app's day palette (Widgets/ui_style.py) ─────────────────────────── */
+ :root{
+   --ground:#f0f0f0;        /* the window ground a panel sits on               */
+   --card:#f9f9f9;          /* SURFACE: settings_card, fields, every panel     */
+   --border:#cccccc;        /* FIELD_BORDER: card and field hairline           */
+   --rule:#d6d6d6;          /* DIVIDER_COLOR: hline() and the header rule      */
+   --ink:#222222;           /* FIELD_TEXT                                      */
+   --muted:#666666;         /* SUBTITLE_COLOR / GREY_700                       */
+   --unit:#4a4a4a;          /* UNIT_INK: the unit after a value                */
+   --navy:#003366;          /* PRIMARY_DARK / TITLE_COLOR                      */
+   /* ui_style.segmented_control: #e3e3e3 track, #f9f9f9 pill on #cfcfcf */
+   --seg-track:#e3e3e3; --seg-pill:#f9f9f9; --seg-edge:#cfcfcf;
+   --navy-hover:#143d62;    /* PRIMARY_HOVER                                   */
+   --navy-fill:#194c79;     /* PRIMARY                                         */
+   --pill-blue-bg:#eef2f7; --pill-blue-edge:#d3dce6; --pill-blue-ink:#003366;
+   --pill-red-bg:#f9eeeb;  --pill-red-edge:#e6c6bd;  --pill-red-ink:#8c2f22;
+   --pill-gold-bg:#fdf6e3; --pill-gold-edge:#ecdca0; --pill-gold-ink:#8a6d1f;
+   --track:#f7f7f7;         /* FIELD_BG_RO                                    */
+   --bar-track:#ececec;     /* GREY_100: PROGRESS_QSS's own groove             */
+   --progress:#b3c8de;      /* PROGRESS_FILL                                   */
+   --line:#173e6b;          /* LINE_COLORS[2], the app's navy curve            */
+   --frame:#888888;         /* PLOT_FRAME_COLOR                                */
+   --well:transparent;      /* a plot melts into the panel it sits on          */
+   --well2:#f0f0f0;         /* the histogram box's own ground                  */
+   --hist-edge:#c2c2c2;     /* its hairline                                    */
+   --hist-ink:#9a9a9a;      /* the histogram outline                           */
+   --log-err:#cc0000; --log-warn:#cc8800;
+   --tool:#000000;          /* PLOT_TOOL_ICON: the tool glyphs are black       */
+   --tool-off:#c2c2c2;      /* the same glyph disabled                         */
+   --hover:#ececec;         /* GREY_100: the wash under a hovered icon button  */
+   --pager-ink:#333333;     /* PagedStrip's "n / m" label                      */
+   --log-bg:#f9f9f9;        /* the Global System Log's own box                 */
+   --log-edge:#cfcfcf; --log-ink:#333333; --log-time:#9aa0a6; --log-tag:#003366;
+   /* ui_style.LINE_COLORS: one per display column, in order. */
+   --l0:#7F1D1D; --l1:#9C7A10; --l2:#173E6B;
+   --l3:#14572F; --l4:#472A6E; --l5:#0B535A;
+   --radius:3px;            /* RADIUS_SM = RADIUS_MD = RADIUS_LG = 3           */
+ }
+ /* ── and its night translation, read out of Widgets/night_theme.py ───────── */
+ /* NIGHT. Set as an attribute rather than matched as a media query, so
+    the three-way choice below has one place to express itself. */
+ :root[data-theme="night"]{
+   --ground:#353535;        /* GROUND */
+   --card:#3b3b3b;          /* CARD   */
+   --border:#565656; --rule:#565656;          /* BORDER */
+   --ink:#e6e6e6;           /* TEXT   */
+   --muted:#a6a6a6; --unit:#a6a6a6;           /* TEXT_MUTED */
+   --navy:#7fb2ec;          /* NAVY_TEXT: navy as TEXT lifts, as a fill it does not */
+   --navy-hover:#2a6bb0; --navy-fill:#1f4f85;
+   --pill-blue-bg:#2e4760; --pill-blue-edge:#3e658f; --pill-blue-ink:#7fb2ec;
+   --pill-red-bg:#543533;  --pill-red-edge:#744a46;  --pill-red-ink:#e8a29a;
+   --pill-gold-bg:#544a2e; --pill-gold-edge:#ecdca0; --pill-gold-ink:#e8c569;
+   --track:#393939; --bar-track:#4a4a4a;
+   --progress:#4a6f95;      /* PROGRESS */
+   --line:#6fa3d8;          /* the line palette lifted for a dark ground */
+   --frame:#8e8e8e;
+   /* By night the app lifts the inside of a plot one step above the card it
+      sits on, so the axes read as a well rather than as a hole. FIELD. */
+   --well:#414141; --well2:#3f3f3f; --hist-edge:#616161; --hist-ink:#8a8a8a;
+   --log-err:#e07a86; --log-warn:#e4c56a;
+   --tool:#e6e6e6; --tool-off:#616161; --hover:#4a4a4a; --pager-ink:#dadada;
+   --log-bg:#353535; --log-edge:#616161; --log-ink:#dadada;
+   --log-time:#7e7e7e; --log-tag:#7fb2ec;
+   --seg-track:#4a4a4a; --seg-pill:#5e5e5e; --seg-edge:#6e6e6e;
+   /* night_theme.LINE_COLORS: the same six hues lifted for a dark ground. */
+   --l0:#e0665e; --l1:#e6c15a; --l2:#6fa3d8;
+   --l3:#7fbf5f; --l4:#b18ae0; --l5:#5fc3cc;
+ }
+
+ *{ box-sizing:border-box; -webkit-text-size-adjust:100%;
+    /* no browser flash on a tap: the rows and buttons answer in the app's
+       own colours (:hover / :active below) */
+    -webkit-tap-highlight-color:transparent; }
+ /* The browser's own controls (a drop-down's list, a tick, a scrollbar) are
+    drawn for the theme the PAGE is in, which is not always the system's. */
+ :root{ color-scheme:light; }
+ :root[data-theme="night"]{ color-scheme:dark; }
+ /* TYPE, MEASURED OFF THE PANEL, not chosen. Segoe UI 9 pt is the
+    application default and 9 pt is 12 px at the 96 dpi a browser assumes, so
+    12 px is this page's body size and every other size below is the same
+    conversion of what the panel sets. */
+ /* The panel's own window is 2000 px wide at its natural size; the page
+    stops there rather than spreading across a monitor. */
+ /* THE SCROLLBAR ALWAYS HAS ITS LANE. Without this the page is a loop: a
+    plot is sized from the column width, that makes the page tall enough for
+    a scrollbar, the bar takes 10 px off the column, and the plot that was
+    just sized is 10 px out. Reserving the lane breaks the loop rather than
+    chasing it, which two passes of re-measurement only made oscillate. */
+ html{ scrollbar-gutter:stable; }
+ /* ON A DESKTOP THE PAGE IS A CENTRED COLUMN with room either side (the
+    user, 2026-09-23), 1280 px at most; a phone still uses its full width. */
+ /* THE SAFE AREA. The viewport is declared viewport-fit=cover, so on a
+    phone with a notch the page runs under it; a turned iPhone put the left
+    edge of every row under the notch and the footer under the home bar. The
+    16 px stays the least the page keeps from each edge. */
+ body{ margin:0 auto; max-width:1280px; overflow-x:hidden;
+       padding:max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+               max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+       background:var(--ground); color:var(--ink);
+       font:12px/1.45 "Helvetica Neue",Helvetica,Arial,sans-serif; }
+
+ /* header_block(): TITLE_PT 16 bold navy, abstract 2 px under it in grey,
+    with the app's own icon beside them. */
+ /* The mark and the name are ONE line: the name shrinks on a narrow screen
+    rather than wrapping under the mark. The state pill is its own line under
+    them. */
+ .brand{ display:flex; align-items:center; gap:9px; margin-bottom:6px;
+         font-size:clamp(15px, 4.4vw, 21.3px); }
+ .brand .logo{ width:1em; height:1em; flex:0 0 1em; }
+ .brand .title{ white-space:nowrap; font-size:inherit; }
+ .brand .logo.night{ display:none; }
+ :root[data-theme="night"] .brand .logo.day{ display:none; }
+ :root[data-theme="night"] .brand .logo.night{ display:block; }
+ /* THE MASTHEAD IS A NAME, so it takes the face the names are set in. */
+ .title{ font-family:"Avenir","Avenir Book","Nunito Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+         font-size:21.3px; font-weight:700; color:var(--navy); margin:0; }
+ .abstract{ color:var(--muted); font-size:12px; margin:0 0 16px; }
+
+ /* NO CARD. A panel in this app puts its content straight on the panel and
+    separates its sections with a heading over a hairline; it does not wrap
+    each one in a filled box. The only box left on the page is the log's,
+    because the Global System Log really does have one. */
+ .card{ background:transparent; border:0; padding:0; margin-bottom:22px; }
+ /* TABLE_HEADER_RULE: what marks a header as a header is its bold black text,
+    not a heavier rule. 1 px, the same grey as hline(), 4 px of air under it. */
+ .card h2{ display:flex; align-items:baseline; justify-content:space-between;
+           gap:14px; font-family:"Avenir","Avenir Book","Nunito Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+           font-size:14px; font-weight:700; color:var(--ink); margin:0 0 10px;
+           border-bottom:1px solid var(--rule); padding-bottom:4px; }
+ /* What the section is ABOUT, right-aligned beside its name: a value, so it
+    is the body face and the body ink, not the heading's. */
+ .card h2 .what{ font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+                 font-size:12px; font-weight:400; color:var(--ink);
+                 text-align:right; min-width:0; overflow:hidden;
+                 text-overflow:ellipsis; white-space:nowrap; }
+
+ /* The rounded status pill, in the app's three tones. No numbers live in a
+    pill: it says what is happening, and the figures go to the rows, the
+    progress bar and the plot. */
+ .pill{ display:inline-block; padding:2px 10px; border-radius:var(--radius);
+        font-size:12px; font-weight:600; border:1px solid transparent; }
+ .pill.blue{ background:var(--pill-blue-bg); border-color:var(--pill-blue-edge);
+             color:var(--pill-blue-ink); }
+ .pill.red{  background:var(--pill-red-bg);  border-color:var(--pill-red-edge);
+             color:var(--pill-red-ink); }
+ /* The main window's SafeTip notice (#safetipBadge): the badge red, a 3 px
+    corner, 4 px by 12 px of padding, the body weight with the run in bold. */
+ #safetip{ margin:6px 0 0; }
+ .stnotice{ display:inline-block; padding:4px 12px; border-radius:3px;
+            font-size:12px; font-weight:400; line-height:1.4;
+            background:var(--pill-red-bg); border:1px solid var(--pill-red-edge);
+            color:var(--pill-red-ink); }
+ .pill.gold{ background:var(--pill-gold-bg); border-color:var(--pill-gold-edge);
+             color:var(--pill-gold-ink); }
+
+ /* min-width:0 and the wrap are what keep a long value (a file name like
+    Poke-2026-09-22-19-13-55-00001.dat) from widening the row, pushing the
+    whole page sideways and carrying every right-hand number off the screen. */
+ .row{ display:flex; justify-content:space-between; gap:12px; padding:3px 0;
+       align-items:baseline; max-width:520px; }
+ .row span{ min-width:0; }
+ .row .k{ color:var(--muted); white-space:nowrap; }
+ .row .v{ font-variant-numeric:tabular-nums; text-align:right; overflow-wrap:anywhere; }
+ /* The unit goes AFTER the value, in the app's unit grey, at full size. */
+ .u{ color:var(--unit); }
+
+ /* PROGRESS_QSS, the panel's own: a 24 px track in GREY_100 on the field
+    hairline with its caption centred INSIDE it, and the fill inset by 1 px so
+    it never touches the border, rounded only at the end it starts from. */
+ /* A LENGTH, not the width of whatever contains it. Edge to edge it read
+    as a rule with a number on it, and on a desktop it was most of a metre of
+    fill to say 53 %. */
+ .bar{ max-width:340px; position:relative; height:24px; background:var(--bar-track);
+       border:1px solid var(--border); border-radius:var(--radius);
+       margin:8px 0 0; overflow:hidden; }
+ /* THE FILL GLIDES, as style_fade's progress glide does in the panel: at one
+    steady speed, over the time the last push took to follow the one before
+    (--glide, set per push), so it creeps on between pushes instead of jumping
+    once every few seconds. A first draw or a big jump takes PROGRESS_MS. */
+ .bar .fill{ position:absolute; left:1px; top:1px; bottom:1px;
+             background:var(--progress); border-radius:1px 0 0 1px;
+             transition:width var(--glide, 220ms) var(--glide-ease, ease); }
+ .bar.full .fill{ border-radius:1px; }
+ .bar .cap{ position:absolute; inset:0; display:flex; align-items:center;
+            justify-content:center; color:#333333; font-size:12px; }
+ :root[data-theme="night"] .bar .cap{ color:#dadada; }
+
+ canvas{ width:100%; display:block; }
+ #plot{ height:180px; margin-top:10px; }
+
+ /* One column per recorded channel, what _make_display_column builds: the
+    channel's own header over the colour map over its line plot. PagedStrip
+    shows three of them side by side with a 12 px gap and pages through the
+    rest, and that is what a desktop gets here. A phone has room for one, so
+    the same pager turns one column at a time. */
+ #plots{ display:flex; gap:12px; align-items:flex-start; justify-content:center; }
+ .chan{ flex:1 1 0; min-width:0; max-width:640px; margin-top:14px; }
+ /* The map above a records table: as wide as it is tall (the canvas squares
+    its own drawing area), centred, and not taller than a phone screen. */
+ .chan.recmap{ flex:0 0 auto; width:100%; max-width:430px;
+               align-self:center; }
+ /* ColumnHeader: bold "Display channel N", then the name, then the unit a
+    size down in the unit grey. Caption and name are both #333; only the
+    caption is bold. 24 px tall, as the old channel picker was. */
+ /* 30 px: the direction toggle's track is 30 tall, and the panel sizes the
+    header row to it. At 24 the overflow clip cut 3 px off its top and bottom
+    and took its rounded corners with them. */
+ .chan .chead{ height:30px; display:flex; align-items:center;
+               justify-content:center; gap:4px; font-size:12px;
+               color:#333333; white-space:nowrap; overflow:hidden; }
+ .chan .chead .cap{ font-weight:700; margin-right:8px; }
+ .chan .chead .u{ font-size:10px; color:var(--unit); }
+ /* direction_toggle: segmented_control(pad_h=8) -- a grey track with the
+    selected segment as a pale pill in bold navy. A raster scan has no
+    backward pass, and the panel greys the whole control out for one. */
+ /* ui_style.direction_toggle == segmented_control(pad_h=8, reserve=16):
+    a 3 px track margin, a 2 px gap between the segments ("a small gap so the
+    selected pill reads as floating"), segments padded 4px 8px, and the pill
+    carrying a soft drop shadow. The gap is why the pill is not simply half
+    the track: without it the pill fills its half exactly and reads as a
+    block rather than as something sitting on top. */
+ /* MEASURED OFF THE PANEL (direction_toggle("Up", "Down") grabbed offscreen
+    with main.py's stylesheet, 2026-09-23): track 101 x 30, a 3 px margin all
+    round, 2 px between segments, each segment 24 px tall and as wide as its
+    own BOLD label + 22 px (Up 38, Down 55; they are NOT equal halves). */
+ .seg{ position:relative; display:inline-flex; gap:2px; padding:3px;
+       background:var(--seg-track); border-radius:4px; margin-left:12px; }
+ /* The pill is the ONLY box: it is laid over the selected segment by
+    placeSegThumbs() from that segment's own geometry, which is what
+    _seg_attach_thumb does. SEG_ANIM_MS with OutCubic. The shadow is the
+    app's QGraphicsDropShadowEffect(blur 9, offset (0,1), rgba(0,30,70,60)). */
+ .seg .thumb{ position:absolute; top:3px; bottom:3px; left:3px; width:0;
+              box-sizing:border-box; border-radius:3px;
+              background:var(--seg-pill); border:1px solid var(--seg-edge);
+              box-shadow:0 1px 4.5px rgba(0,30,70,.235); }
+ .seg.anim .thumb{ transition:left 170ms cubic-bezier(.215,.61,.355,1),
+                              width 170ms cubic-bezier(.215,.61,.355,1); }
+ /* A segment reserves the width of its label in BOLD (the hidden ::after),
+    so it does not change width as the selection moves onto it. */
+ .seg span[data-d]{ position:relative; display:inline-flex; flex-direction:column;
+            align-items:center; justify-content:center; box-sizing:border-box;
+            height:24px; padding:0 11px; color:#555555; font-size:12px;
+            white-space:nowrap; cursor:pointer;
+            transition:color 170ms cubic-bezier(.215,.61,.355,1); }
+ .seg span[data-d]::after{ content:attr(data-w); font-weight:700; height:0;
+                   overflow:hidden; visibility:hidden; }
+ .seg span[data-d]:hover:not(.on){ background:#d8d8d8; border-radius:3px; }
+ .seg span[data-d].on{ color:var(--navy); font-weight:700; }
+ :root[data-theme="night"] .seg span[data-d]{ color:var(--muted); }
+ :root[data-theme="night"] .seg span[data-d].on{ color:var(--navy); }
+ :root[data-theme="night"] .seg span[data-d]:hover:not(.on){ background:var(--hover); }
+ .seg.off{ background:var(--track); }
+ /* Disabled: no shadow, because a greyed control should not look like it
+    is popping off the track (ui_style._shadow does the same). */
+ .seg.off .thumb{ background:var(--hover); border-color:var(--rule);
+                  box-shadow:none; }
+ .seg.off span[data-d], .seg.off span[data-d].on{ color:var(--tool-off);
+                              background:none; cursor:default; }
+ .seg.off span[data-d].on{ font-weight:400; }
+ :root[data-theme="night"] .seg.off span[data-d]{ color:var(--tool-off); }
+ :root[data-theme="night"] .chan .chead{ color:#dadada; }
+ /* An empty slot on the last page: the columns keep their width instead of
+    stretching to fill it, which is what PagedStrip's fixed pitch does. */
+ .chan.empty{ visibility:hidden; }
+ /* The history selector: "Slow" and "Fast", each with its drop-down,
+    centred, one row above all the columns, since every column shows the
+    frame it picks. */
+ .fpick{ display:flex; justify-content:center; align-items:center; gap:6px;
+         margin:14px 0 0; font-size:12px; color:var(--ink); }
+ .fpick select:first-of-type{ margin-right:8px; }
+ .fpick select{ min-width:110px; height:24px; font-size:12px; }
+
+ /* RecordTable: no fill anywhere, because it is meant to sit on the panel.
+    A hairline under the header in the field border grey, captions bold in
+    #444444 with the second line in the unit grey when it is a unit, and every
+    value centred. No rule between rows and no grid at all. */
+ .rec{ width:100%; border-collapse:collapse; font-size:12px; }
+ .rec th{ font-weight:700; color:#444444; padding:3px 6px 5px;
+          border-bottom:1px solid var(--border); vertical-align:bottom;
+          white-space:pre; line-height:1.25; }
+ /* BOTH LINES BOLD. A unit in brackets keeps the muted ink the app writes
+    units in, but not a lighter weight: in a heading row where everything
+    else is bold, one thin line under a bold one reads as a mistake
+    (record_table.py sets bold for both and changes only the pen). */
+ .rec th .u{ font-weight:700; color:var(--unit); }
+ .rec td{ padding:0 6px; height:28px; color:var(--ink); text-align:center;
+          white-space:pre; line-height:1.25; }
+ .rec td.two{ height:42px; }
+ :root[data-theme="night"] .rec th{ color:#dadada; }
+ /* POKE ON PATH: the map with its bar and ETA on the left, the records
+    beside it, as the panel lays them out; stacked on a narrow screen. */
+ /* The map takes the larger share (the user, 2026-09-23: "the map can be
+    bigger", twice): it grows three to the records' one, up to 1000 px. */
+ .popmap{ flex:3 1 640px; min-width:0; max-width:1000px; margin-top:14px; }
+ .poprec{ flex:1 1 400px; min-width:0; margin-left:24px; }
+ @media (max-width: 860px){ .poprec{ margin-left:0; } }
+ .pophead{ display:flex; align-items:center; gap:10px; font-size:12px; }
+ /* The map is handled, not scrolled past: the page does not scroll or zoom
+    under a finger on it. */
+ /* The map draws no title, so the band MARG.t keeps for one is taken back:
+    the frame sits just under the progress bar (the user, 2026-09-23). */
+ .popmap canvas.map{ touch-action:none; cursor:grab; margin-top:-18px; }
+ .popmap .popbar{ margin-bottom:0; }
+ .popmap canvas.map:active{ cursor:grabbing; }
+ /* the panel's fit button: a 22 px icon button in the tool grey */
+ .popfit{ margin-left:auto; width:22px; height:22px; padding:0; border:0;
+          background:transparent; border-radius:var(--radius); cursor:pointer;
+          display:flex; align-items:center; justify-content:center; }
+ .popfit:hover{ background:var(--hover); }
+ .popfit svg{ width:16px; height:16px; fill:none; stroke:var(--tool);
+              stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+ .poptitle{ font-weight:700; color:var(--ink); }
+ .popbar{ display:flex; align-items:center; gap:10px; margin:10px 0 4px 56px; }
+ .popbar .bar{ width:130px; margin:0; }
+ .popbar .eta{ color:#555555; font-size:12px; }
+ :root[data-theme="night"] .popbar .eta{ color:var(--muted); }
+ .rec tr.runrow td{ background:var(--pill-blue-bg); color:var(--pill-blue-ink); }
+ .rec tr.runrow td:first-child{ border-radius:6px 0 0 6px; }
+ .rec tr.runrow td:last-child{ border-radius:0 6px 6px 0; }
+ .rec svg.chev{ width:12px; height:12px; fill:none; stroke:var(--pill-blue-ink);
+                stroke-width:2.8; stroke-linecap:round; stroke-linejoin:round; }
+ /* THE APPROACH PANEL: two sections side by side, stacked when narrow. */
+ .asec{ flex:1 1 440px; min-width:0; margin-top:14px; }
+ .asec + .asec{ margin-left:28px; }
+ @media (max-width: 960px){ .asec + .asec{ margin-left:0; } }
+ .ahead{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+ .atitle{ display:inline-flex; align-items:center; gap:6px; font-weight:700;
+          font-size:14px; color:var(--navy); }
+ .atitle svg.tri{ width:9px; height:9px; fill:var(--navy); }
+ /* the section's state pill (_state_pill_qss: a 3 px corner, 4 by 12 padding) */
+ .apill{ display:inline-block; padding:4px 12px; border-radius:3px; font-size:12px;
+         border:1px solid var(--pill-blue-edge); background:var(--pill-blue-bg);
+         color:var(--pill-blue-ink); min-width:90px; text-align:center; }
+ .amode{ display:inline-flex; align-items:center; gap:8px; margin-left:auto; font-size:12px; }
+ .amode .seg{ margin-left:0; }
+ .seg.ro span[data-d]{ cursor:default; }
+ .seg.ro span[data-d]:hover:not(.on){ background:none; }
+ /* the lamps in two columns, as the panel sets them */
+ .aleds{ display:grid; grid-template-columns:repeat(2, max-content); gap:8px 40px;
+         font-size:12px; margin:0 0 6px 4px; }
+ .aleds .grp{ display:flex; align-items:center; gap:8px; }
+ .ascroll{ max-height:460px; overflow-y:auto; }
+ /* the heading stays over the rows while the list is scrolled to its end */
+ .ascroll thead th{ position:sticky; top:0; z-index:1; background:var(--ground); }
+ .rec tr.here td{ background:var(--hover); }
+ .apxy canvas.xymap{ width:100%; display:block; touch-action:none; cursor:grab; }
+ .apxy .popbar{ margin-left:56px; }
+ .reccap{ font-weight:700; font-size:12px; color:var(--ink); margin:14px 0 6px; }
+
+ /* The .dat header. Its sections are the panel's tabs, so they are captioned
+    the way a table's column headers are: bold black over a 1 px rule. */
+ #cfg{ margin-top:14px; }
+ /* Each section of the header is a chevron you can open, the way the
+    panel's own reveal blocks are: shut by default so the page stays short,
+    and the chevron turns as it opens. */
+ /* No underline: the chevron already says it opens, and a rule under each
+    of six configuration sections is six more lines down the page. */
+ .seclist .sec{ display:flex; align-items:center; gap:6px; cursor:pointer;
+            font-weight:700; color:var(--ink); font-size:12px;
+            padding-bottom:4px;
+            margin:12px 0 0; user-select:none; }
+ .seclist .sec:hover{ color:var(--navy); }
+ .seclist .sec svg{ width:12px; height:12px; flex:0 0 12px;
+                transition:transform .18s ease; }
+ .seclist .sec svg path{ fill:none; stroke:var(--tool); stroke-width:2.8;
+                     stroke-linecap:round; stroke-linejoin:round; }
+ .seclist .sec.open svg{ transform:rotate(90deg); }
+ /* OPENING IS A ROLLER BLIND, as the app's config sections open
+    (UI_data_browser._animate_collapse: 150 ms, InOutCubic; _RollBox): the
+    rows keep their places and the box uncovers them top-down, rather than
+    the section appearing in one frame and shoving the page down. The grid
+    row is what animates, because a height of "auto" cannot be. */
+ .seclist .body{ display:grid; grid-template-rows:1fr;
+                 transition:grid-template-rows var(--t-sec) var(--ease-io),
+                            visibility 0s linear 0s; }
+ .seclist .body > .in{ overflow:hidden; min-height:0; }
+ .seclist .body.shut{ grid-template-rows:0fr; visibility:hidden;
+                      transition:grid-template-rows var(--t-sec) var(--ease-io),
+                                 visibility 0s linear var(--t-sec); }
+ .seclist .row{ max-width:520px; }
+
+ /* AN ENTRY'S HEADING: what was run, and when, on one line. The time is a
+    value, so it takes the body's grey rather than the heading's ink. */
+ /* An entry's own rule is dropped too: the list is a dozen of them, and
+    the heading above it already says where the list starts. */
+ #xlog .sec{ border-bottom:0; margin:8px 0 0; padding-bottom:0; }
+ #xlog .sec .when{ margin-left:auto; font-weight:400; color:var(--muted); }
+ #xlog .sec .nm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+ #xlog .secs{ margin:6px 0 2px; font-size:12px; color:var(--muted);
+              max-width:520px; }
+ #xlog .foot{ margin-top:14px; font-size:12px; color:var(--muted); }
+
+ /* ONE ROW PER INSTRUMENT: the app's lamp, its name, and what the log last
+    said about it. Same 12 px lamp as the run's own row of them. */
+ /* Twelve instruments used to mean twelve rules. */
+ #insts .irow{ display:flex; align-items:center; gap:9px; max-width:520px;
+               padding:4px 0; }
+ #insts .nm{ flex:1 1 auto; font-size:12px; overflow:hidden;
+             text-overflow:ellipsis; white-space:nowrap; }
+ #insts .st{ flex:0 0 auto; font-size:12px; color:var(--muted); }
+ #insts .foot{ margin-top:12px; font-size:12px; color:var(--muted); }
+ /* The lamps on the front panel's row, packed tight. */
+ .modrow .lamps{ display:inline-flex; gap:3px; margin-right:8px;
+                 vertical-align:-1px; }
+ .modrow .lamps .led{ width:9px; height:9px; border-radius:5px; flex:0 0 9px; }
+
+ /* THE LED ROW, as the panel builds it: a 12 px circle with the app's radial
+    gradient and a 1 px rim of its own dark stop, SPACE_SM to its caption and
+    SPACE_MD between groups, the lot against the right edge (the user,
+    2026-09-23: every LED row right-aligned). */
+ .leds{ display:flex; justify-content:flex-end; align-items:center;
+        gap:8px; margin:2px 0 10px; flex-wrap:wrap; }
+ .leds .grp{ display:flex; align-items:center; gap:8px; margin-right:4px; }
+ .leds .grp + .grp{ margin-left:12px; }
+ .leds .grp:last-child{ margin-right:0; }   /* flush with the right edge */
+ /* THE LAMP'S THREE STOPS ARE REGISTERED COLOURS, so a change of state can
+    FADE, as Widgets/led_transition.py fades the app's: lighting up is quick
+    and front-loaded (LED_ON_MS 60, OutQuad), going dark lingers (LED_OFF_MS
+    300, ease-in-and-out). A gradient itself cannot be transitioned; the
+    colours it is drawn from can. The rim is the dark stop, as in led_qss. */
+ @property --led-a{ syntax:"<color>"; inherits:false; initial-value:#e0e0e0; }
+ @property --led-b{ syntax:"<color>"; inherits:false; initial-value:#888888; }
+ @property --led-c{ syntax:"<color>"; inherits:false; initial-value:#333333; }
+ .led{ width:12px; height:12px; border-radius:6px; display:inline-block;
+       flex:0 0 12px; border:1px solid var(--led-c);
+       background:radial-gradient(circle at 30% 30%, var(--led-a) 0%, var(--led-b) 50%,
+                                  var(--led-c) 100%);
+       transition:--led-a 300ms cubic-bezier(.45,0,.55,1),
+                  --led-b 300ms cubic-bezier(.45,0,.55,1),
+                  --led-c 300ms cubic-bezier(.45,0,.55,1); }
+ .led.on, .led.error, .led.connecting{ transition-duration:60ms;
+       transition-timing-function:cubic-bezier(.25,.46,.45,.94); }
+ .led.on{ --led-a:#93d567; --led-b:#2D5016; --led-c:#1d340e; }
+ .led.error{ --led-a:#ff3d6e; --led-b:#800020; --led-c:#420011; }
+ .led.connecting{ --led-a:#ecc150; --led-b:#D4A017; --led-c:#3c2d06; }
+ .led.off{ --led-a:#e0e0e0; --led-b:#888888; --led-c:#333333; }
+
+ /* BY NIGHT THE LAMPS GET THEIR OWN PALETTE, ui_style._LED_COLORS_NIGHT.
+    The day jewels read as lit only because the paper around them is bright;
+    on a dark ground the same lamp looks unlit. Same hues, brighter middle
+    stop, and a rim lifted off black so the lamp keeps its outline. */
+ :root[data-theme="night"] .led.on{ --led-a:#b4f08c; --led-b:#4cbf5a; --led-c:#256b2b; }
+ :root[data-theme="night"] .led.error{ --led-a:#ff7d9c; --led-b:#e83a5b; --led-c:#6e1330; }
+ :root[data-theme="night"] .led.connecting{ --led-a:#ffe08e; --led-b:#f2b62b; --led-c:#6b500b; }
+ :root[data-theme="night"] .led.off{ --led-a:#a3a3a3; --led-b:#646464; --led-c:#4e4e4e; }
+
+ /* The pager, as PagedStrip builds it: a 22 px icon button either side of
+    "n / m" in #333333, 2 px apart, and the whole row gone when there is only
+    one page. */
+ .pager{ display:flex; align-items:center; justify-content:center; gap:2px;
+         margin-top:10px; }
+ .pager button{ width:22px; height:22px; padding:0; border:none; cursor:pointer;
+                background:transparent; border-radius:var(--radius);
+                display:flex; align-items:center; justify-content:center; }
+ .pager button:hover:not(:disabled){ background:var(--hover); }
+ .pager button:disabled{ cursor:default; }
+ .pager svg{ width:16px; height:16px; }
+ .pager svg path{ fill:none; stroke:var(--tool); stroke-width:2.8;
+                  stroke-linecap:round; stroke-linejoin:round; }
+ .pager button:disabled svg path{ stroke:var(--tool-off); }
+ .pager .n{ color:var(--pager-ink); min-width:38px; text-align:center; }
+
+ select{ font:13px inherit; height:26px; padding:2px 4px; color:var(--ink);
+         border:1px solid var(--border); border-radius:var(--radius);
+         background:var(--card); max-width:100%; }
+
+/* The Global System Log is its own box: #f9f9f9 on a 1 px #cfcfcf hairline,
+   3 px corners, 4 px of padding, Cascadia Mono. NO RULE BETWEEN LINES: the
+   app draws none, and a log with a rule per line reads as a table. A wrapped
+   line hangs under the TAG, never under the time, which is what the block's
+   left margin and negative indent do in the app. */
+ /* overflow-anchor off: the page keeps the lines in place itself when the
+    oldest go off the top (renderLog), and a browser that also anchors would
+    move them twice. */
+ .log{ font:12px/1.45 "Cascadia Mono",Consolas,ui-monospace,monospace;
+       background:var(--log-bg); border:1px solid var(--log-edge);
+       border-radius:var(--radius); padding:4px; color:var(--log-ink);
+       max-height:360px; overflow-y:auto; overflow-anchor:none; }
+ /* The log's heading has no hairline under it: the box is the separation
+    (the user, 2026-09-23). */
+ #m-log h2{ border-bottom:0; padding-bottom:0; }
+ .log div{ padding:0; padding-left:9ch; text-indent:-9ch;
+           overflow-wrap:break-word; }
+ /* text-indent is INHERITED, and an inline-block starts a formatting
+    context of its own, so the parent's -9ch hanging indent was applied
+    again inside this box and pushed the time out of it: the column
+    reserved its width and drew nothing. */
+ .log .t{ color:var(--log-time); display:inline-block; width:9ch;
+          text-indent:0; }
+ /* the source tag is navy on EVERY line, including a warning or an error */
+ .log .g{ color:var(--log-tag); }
+ .log .error{ color:var(--log-err); } .log .warning{ color:var(--log-warn); }
+ .stale{ color:var(--pill-red-ink); font-weight:600; }
+ .when{ color:var(--muted); font-size:12px; }
+ /* HOW OLD WHAT YOU ARE LOOKING AT IS, beside the state pill and never in
+    it (a pill carries no numbers). It counts on by itself between pushes,
+    and turns the pill's gold when the lab PC is later than its own rhythm
+    allows: a stale reading that looks live is the dangerous failure. */
+ #head{ display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px; }
+ .fresh{ color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
+ .fresh.late{ color:var(--pill-gold-ink); font-weight:600; }
+ .fresh .stale{ font-weight:600; }
+
+ /* The app's scrollbars appear when the pointer is in the area and fade out
+    again (Widgets/scrollbar_autohide.py). A phone already does this; a desktop
+    browser does not, and a permanent grey bar down the side is the one piece
+    of chrome that would not belong to this app. */
+ ::-webkit-scrollbar{ width:10px; height:10px; }
+ ::-webkit-scrollbar-thumb{ background:transparent; border-radius:5px;
+                            border:2px solid transparent; background-clip:content-box; }
+ body:hover::-webkit-scrollbar-thumb{ background:rgba(128,128,128,.45);
+                                      background-clip:content-box; }
+ ::-webkit-scrollbar-track{ background:transparent; }
+
+ /* the lock: the same card, the same field, the app's primary button */
+ /* 13vh, not 10: the block used to open with the name and the icon above
+    the form, and losing them moved the field up by about their height. The
+    field stays where it was. */
+ /* THE SIGN-IN: one card in the middle of the screen, NetID over the
+    passphrase, the app's navy for the one button (the user, 2026-09-23:
+    "more modern"). Nothing on it names the lab. */
+ #lock{ max-width:380px; margin:11vh auto 0; padding:0 4px; }
+ .lockcard{ background:var(--card); border:1px solid var(--border); border-radius:14px;
+            padding:30px 28px 22px; box-shadow:0 10px 30px rgba(0,30,70,.08); }
+ .lockmark{ width:46px; height:46px; border-radius:50%; margin:0 auto 14px;
+            display:flex; align-items:center; justify-content:center;
+            background:var(--pill-blue-bg); border:1px solid var(--pill-blue-edge); }
+ .lockmark svg{ width:22px; height:22px; fill:var(--navy-fill); }
+ .locktitle{ margin:0; text-align:center; font-size:20px; font-weight:600; color:var(--ink); }
+ .locksub{ text-align:center; font-size:12px; color:var(--muted); margin:4px 0 22px; }
+ #lock .fld{ display:block; margin-bottom:14px; }
+ #lock .fld > span{ display:block; font-size:12px; font-weight:600; color:var(--ink);
+                    margin:0 0 6px 1px; }
+ #lock input[type=text], #lock input[type=password]{
+      width:100%; height:40px; font:15px inherit; padding:0 12px; box-sizing:border-box;
+      color:var(--ink); background:var(--ground); border:1px solid var(--border);
+      border-radius:8px; transition:border-color 120ms ease, box-shadow 120ms ease; }
+ #lock input:focus{ outline:none; border-color:var(--navy-fill);
+                    box-shadow:0 0 0 3px rgba(0,51,102,.12); }
+ #lock .pw{ position:relative; display:block; }
+ #lock .pw input{ padding-right:42px; }
+ #peek{ position:absolute; right:4px; top:4px; width:32px; height:32px; border:0;
+        background:none; border-radius:6px; cursor:pointer; display:flex;
+        align-items:center; justify-content:center; }
+ #peek:hover{ background:var(--hover); }
+ #peek svg{ width:18px; height:18px; fill:var(--muted); }
+ #peek.on svg{ fill:var(--navy-fill); }
+ #lock .rem{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted);
+             margin:2px 0 18px; cursor:pointer; }
+ /* the app's navy, not the browser's own blue, for the one tick on the card */
+ #lock .rem input{ accent-color:var(--navy-fill); margin:0; }
+ #go{ width:100%; height:42px; font:14px inherit; font-weight:600; cursor:pointer;
+      color:#ffffff; background:var(--navy-fill); border:1px solid var(--navy-fill);
+      border-radius:8px; transition:background 120ms ease; }
+ #go:hover{ background:var(--navy-hover); border-color:var(--navy-hover); }
+ #go:disabled{ opacity:.7; cursor:default; }
+ #lockmsg{ min-height:18px; font-size:12px; margin-top:12px; text-align:center;
+           color:var(--muted); }
+ .locknote{ font-size:11.5px; color:var(--muted); text-align:center; line-height:1.5;
+            margin:16px 10px 0; }
+ .linkish{ background:none; border:none; padding:0; font:12px inherit;
+           color:var(--muted); text-decoration:underline; cursor:pointer; }
+ .hidden{ display:none !important; }
+ /* Opening by itself (the head script): no card, and only if it is slow a
+    quiet word where the card would be. */
+ :root[data-auto] #lock{ visibility:hidden; }
+ :root[data-auto] body::after{ content:"Opening\2026"; position:fixed; left:0; right:0;
+       top:38vh; text-align:center; color:var(--muted); font-size:12px; opacity:0;
+       animation:rv-late-word 200ms ease 700ms forwards; pointer-events:none; }
+ @keyframes rv-late-word{ to{ opacity:1; } }
+
+ /* THE THEME CROSSFADE. The browser snapshots the page before and after and
+    cross-dissolves the two, so nothing dims on the way across. 260 ms is the
+    length the app moves a page in. */
+ @media (prefers-reduced-motion: no-preference){
+   ::view-transition-old(root),
+   ::view-transition-new(root){ animation-duration:260ms;
+                                animation-timing-function:ease; }
+ }
+ /* Both halves at full strength: the default fades one out as the other
+    comes in, which dips through a moment of nothing. */
+ ::view-transition-old(root){ mix-blend-mode:normal; }
+
+ /* THE APP'S OWN SPEEDS. PagedStrip turns a page in 260 ms; a tab changes in
+    150 ms with 8 px of travel (28 px was dizzying, 0 was flat, settled
+    2026-09-16); a segmented control's pill takes 170 ms. */
+ :root{ --t-page:260ms; --t-tab:150ms; --travel:8px;
+        --ease:cubic-bezier(.22,.61,.36,1);
+        /* a config section opening: 150 ms InOutCubic in the app */
+        --t-sec:150ms; --ease-io:cubic-bezier(.65,0,.35,1); }
+
+ /* Somebody who has asked their system for less movement gets none. */
+ @media (prefers-reduced-motion: reduce){
+   *, *::before, *::after{ transition-duration:.01ms !important;
+                           animation-duration:.01ms !important; }
+ }
+
+ /* THE GREETING LINE: who this is, and the two things that belong to them
+    rather than to the fridge. */
+ .userbar{ display:flex; align-items:center; justify-content:space-between;
+           gap:12px; margin:0 0 20px; }
+ /* Not bold: it is a greeting, not a heading. */
+ /* The body's face and the body's size: it is a line of text, not a title. */
+ .welcome{ font-weight:400; color:var(--ink);
+           overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+ .userbar .right{ display:flex; align-items:center; gap:10px; flex:0 0 auto; }
+
+ /* ui_style.segmented_control: a grey track with a pale pill floating on it.
+    The pill is a real element that slides, because that is what the app's
+    does (SEG_ANIM_MS 170, OutCubic). */
+ /* Addressed by id, not by class: `.seg` is the Fwd / Bwd toggle's, and a
+    second rule for the same class merges with it rather than replacing it. */
+ #themeseg{ position:relative; display:flex; padding:2px; border-radius:4px;
+       background:var(--seg-track); }
+ #themeseg .thumb{ position:absolute; top:2px; bottom:2px; width:26px;
+              border-radius:3px; background:var(--seg-pill);
+              border:1px solid var(--seg-edge);
+              transition:transform 170ms cubic-bezier(.22,.61,.36,1); }
+ #themeseg button{ position:relative; width:26px; height:22px; padding:0; border:0;
+              background:none; cursor:pointer; display:flex;
+              align-items:center; justify-content:center; }
+ #themeseg button svg{ width:14px; height:14px; fill:var(--tool); opacity:.62;
+                  transition:opacity 170ms ease; }
+ #themeseg button.on svg{ opacity:1; }
+
+ .iconbtn{ width:26px; height:26px; padding:0; border:0; background:none;
+           cursor:pointer; border-radius:4px; display:flex;
+           align-items:center; justify-content:center; }
+ .iconbtn svg{ width:19px; height:19px; fill:var(--tool); }
+ .iconbtn:hover, .iconbtn:active{ background:var(--hover); }
+
+ /* The account page: the same rows as everywhere else, and the one button
+    that used to float at the bottom of every screen. */
+ /* THE FOOTER: a hairline, then two quiet centred lines. */
+ #foot{ margin:26px 0 0; padding:10px 0 2px; border-top:1px solid var(--rule);
+        display:flex; justify-content:center; align-items:center; flex-wrap:wrap;
+        gap:2px 7px; color:var(--muted); font-size:11px; }
+ #foot .fver{ color:var(--ink); font-weight:600; }
+ #foot .fdot{ color:var(--border); }
+ /* THE ACCOUNT PAGE. The one place on the page that is about a PERSON, so
+    it is laid out like a profile: initials in the app's navy, the name, and
+    two grouped lists with a hairline between rows (the app's own grey). */
+ .acc{ max-width:560px; }
+ .acchead{ display:flex; align-items:center; gap:16px; margin:6px 0 22px; }
+ .avatar{ width:56px; height:56px; border-radius:50%; flex:0 0 56px;
+          display:flex; align-items:center; justify-content:center;
+          background:var(--navy-fill); color:#ffffff; font-size:20px; font-weight:600;
+          letter-spacing:.5px; }
+ .accname{ font-size:18px; font-weight:600; color:var(--ink); line-height:1.25; }
+ .accsub{ font-size:12px; color:var(--muted); margin-top:3px; }
+ .accgrp{ margin-bottom:18px; }
+ .acccap{ font-size:13px; font-weight:600; color:var(--ink); margin:0 0 8px 2px; }
+ .accrow.dev{ min-height:56px; }
+ .devico{ flex:0 0 36px; height:36px; border-radius:8px; background:var(--pill-blue-bg);
+          display:flex; align-items:center; justify-content:center; }
+ .devico svg{ width:20px; height:20px; fill:var(--navy-fill); }
+ .devtxt{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px; }
+ .devname{ color:var(--ink); font-weight:600; }
+ .devsub{ color:var(--muted); font-size:12px; }
+ .acclist{ border:1px solid var(--border); border-radius:8px; background:var(--card);
+           overflow:hidden; }
+ .accrow{ display:flex; align-items:center; gap:12px; min-height:44px; padding:0 14px;
+          font-size:13px; }
+ .accrow + .accrow{ border-top:1px solid var(--rule); }
+ .accrow .k{ flex:0 0 110px; color:var(--muted); }
+ .accrow .v{ flex:1 1 auto; min-width:0; color:var(--ink); overflow:hidden;
+             text-overflow:ellipsis; white-space:nowrap;
+             display:flex; align-items:center; gap:8px; }
+ .accbtn{ flex:0 0 auto; height:28px; padding:0 14px; border-radius:6px; cursor:pointer;
+          font:12px inherit; font-weight:600; color:var(--navy-fill);
+          background:transparent; border:1px solid var(--border); }
+ .accbtn:hover{ background:var(--hover); }
+ .accbtn.danger{ color:var(--pill-red-ink); border-color:var(--pill-red-edge); }
+ .accbtn.danger:hover{ background:var(--pill-red-bg); }
+ .accnote{ font-size:11.5px; color:var(--muted); margin:8px 2px 0; line-height:1.45; }
+ :root[data-theme="night"] .accbtn{ color:var(--navy); }
+
+ /* THE FRONT PANEL. One row per module: its name in the section face, the
+    one reading worth glancing at underneath, a chevron to say it opens.
+    A row is a button because that is what it is, styled back down so it
+    reads as part of the page rather than as a control. */
+ #home{ margin-top:2px; }
+ /* Separated by space, not by a line: five rules down a short list is
+    more furniture than list. */
+ .modrow{ display:block; width:100%; text-align:left; cursor:pointer;
+          background:none; border:0; padding:0 0 20px; font:inherit;
+          color:inherit; }
+ .modrow:last-child{ padding-bottom:6px; }
+ .modrow:hover .modname, .modrow:active .modname{ color:var(--navy-hover); }
+ :root[data-theme="night"] .modrow:active .modname{ color:var(--navy); }
+ .modname{ display:flex; align-items:baseline; justify-content:space-between;
+           gap:10px; font-family:"Avenir","Avenir Book","Nunito Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+           font-size:14px; font-weight:700; color:var(--ink); }
+ /* ui_style.draw_chevron's geometry, pointing the way the row opens. */
+ .modname svg{ width:13px; height:13px; flex:0 0 13px; stroke:var(--muted);
+               stroke-width:2.8; fill:none; stroke-linecap:round;
+               stroke-linejoin:round; align-self:center; }
+ .modread{ margin-top:5px; font-size:12px; color:var(--ink);
+           overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+ .modread .dim, .modrow .dim{ color:var(--muted); }
+ .modrow .bar{ margin-top:8px; }
+ /* TWO COLUMNS, at every width the front panel is shown (the user,
+    2026-09-26, after comparing it with one column and with only Fridge and
+    Instruments paired). Each row keeps its height and starts at the top of
+    its grid row: a button centres its content vertically, which put the
+    shorter of a pair lower than its neighbour. A long reading (a log line)
+    is cut with an ellipsis where it meets the next column. The lamps take a
+    line of their own over the count, since half a phone is too narrow for
+    both. */
+ #home{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr));
+        column-gap:20px; align-items:start; }
+ #home .modrow[data-go="m-insts"] .modread{ white-space:normal; }
+ #home .modrow .lamps{ display:flex; flex-wrap:wrap; max-width:100%; margin:0 0 5px; }
+ /* On the narrowest phones (320 px) half the page is about 130 px, and
+    twelve lamps 3 px apart need 141: the last one dropped onto a line of its
+    own. 2 px apart they need 130, and a narrower gutter between the columns
+    leaves room for them even where a scrollbar keeps its lane. */
+ @media (max-width: 359px){
+   #home{ column-gap:14px; }
+   #home .modrow .lamps{ gap:2px; }
+ }
+
+ /* THE RUN'S READ-OUTS, in the panel's two columns: label then value,
+    reading across. No box around a value, because there is nothing to type
+    into here; the panel's read-only fields are a form's convention, not a
+    way of showing a number. */
+ /* THE PANEL'S OWN GRID: five columns, as the QGridLayout has them. A
+    progress bar spans the first three, so the rate beside it (min/line,
+    s/point) lands in the fourth and fifth, which is where the panel writes
+    it. Rows are placed explicitly, so a cell the run cannot fill leaves a
+    gap rather than shuffling everything up a line. */
+ #runtime{ display:grid;
+           grid-template-columns:auto minmax(64px,140px) 14px auto minmax(64px,140px);
+           gap:5px 10px; max-width:560px; margin:12px 0 2px;
+           font-size:12px; align-items:center; }
+ #runtime .k{ color:var(--muted); white-space:nowrap; }
+ #runtime .v{ color:var(--ink); white-space:nowrap;
+              overflow:hidden; text-overflow:ellipsis; }
+ #runtime .u{ color:var(--unit); margin-left:3px; }
+ #runtime .bar{ margin:0; }
+ @media (max-width: 560px){
+   /* The bar keeps the full width and each caption takes the line under it,
+      which is how the panel reflows when its window is narrowed. */
+   #runtime{ grid-template-columns:auto 1fr; }
+   #runtime > *{ grid-column:auto !important; }
+   #runtime .bar{ grid-column:1 / -1 !important; }
+ }
+
+ /* Going back. Only ever present on a narrow screen, inside a module. */
+ #backbar{ display:flex; align-items:center; gap:7px; cursor:pointer;
+           background:none; border:0; padding:2px 0 12px; font:inherit;
+           color:var(--muted); font-size:12px; }
+ #backbar svg{ width:13px; height:13px; stroke:var(--muted); stroke-width:2.8;
+               fill:none; stroke-linecap:round; stroke-linejoin:round; }
+ #backbar:hover{ color:var(--navy); }
+ #backbar:hover svg{ stroke:var(--navy); }
+ /* Until the lock opens the icons have no src at all: an empty one would
+    make the browser re-request this page, and a placeholder would still be
+    an image baked into the markup. */
+ .logo:not([src]){ display:none; }
+</style></head><body>
+
+<div id="lock">
+  <!-- NOTHING HERE NAMES ANYONE. Whose page this is arrives sealed, with the
+       data, and is written in once a NetID and its passphrase open it. -->
+  <div class="lockcard">
+    <div class="lockmark"><svg viewBox="0 0 24 24"><path d="M7 10V7a5 5 0 0 1 10 0v3h1.5A1.5 1.5 0 0 1 20 11.5v8A1.5 1.5 0 0 1 18.5 21h-13A1.5 1.5 0 0 1 4 19.5v-8A1.5 1.5 0 0 1 5.5 10H7Zm2 0h6V7a3 3 0 0 0-6 0v3Z"/></svg></div>
+    <h1 class="locktitle">Sign in</h1>
+    <div class="locksub">Remote View</div>
+    <form id="lockform" autocomplete="on">
+      <label class="fld"><span>NetID</span>
+        <input type="text" id="netid" autocomplete="username" autocapitalize="off"
+               autocorrect="off" spellcheck="false" placeholder="e.g. ab1234"></label>
+      <label class="fld"><span>Passphrase</span>
+        <span class="pw"><input type="password" id="pass" autocomplete="current-password"
+               autocapitalize="off" autocorrect="off" spellcheck="false">
+          <button type="button" id="peek" title="Show the passphrase" aria-label="Show the passphrase">
+            <svg viewBox="0 0 24 24"><path d="M12 5c5 0 9 4.5 10 7-1 2.5-5 7-10 7S3 14.5 2 12c1-2.5 5-7 10-7Zm0 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 2.2a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6Z"/></svg>
+          </button></span></label>
+      <label class="rem"><input type="checkbox" id="remember" checked> Remember on this device</label>
+      <button type="submit" id="go">Sign in</button>
+    </form>
+    <div id="lockmsg"></div>
+  </div>
+  <div class="locknote">This page is public, what it shows is not. Your NetID and
+    passphrase open the data here on your device and are never sent anywhere.</div>
+</div>
+
+<div id="app" class="hidden">
+  <div class="brand">
+    <img class="logo day" id="logoday" alt="">
+    <img class="logo night" id="logonight" alt="">
+    <div class="title" id="brandtitle"></div>
+  </div>
+  <div class="abstract" id="head">Opening.</div>
+  <!-- The main window's red SafeTip notice, when it is up. -->
+  <div id="safetip" class="hidden"></div>
+
+  <!-- WHO, and what is theirs. The name arrives sealed; until then the line
+       is empty rather than greeting a stranger by somebody else's name. -->
+  <div class="userbar">
+    <div class="welcome" id="welcome"></div>
+    <div class="right">
+      <div id="themeseg">
+        <span class="thumb" id="segthumb"></span>
+        <button data-mode="day" title="Day" aria-label="Day"><svg viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg></button>
+        <button data-mode="night" title="Night" aria-label="Night"><svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg></button>
+        <button data-mode="system" title="Follow system" aria-label="Follow system"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM12 5a7 7 0 0 0 0 14z"/></svg></button>
+      </div>
+      <button class="iconbtn" id="gouser" title="Account" aria-label="Account">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- THE FRONT PANEL, on a narrow screen only. Filled by renderHome(). -->
+  <div id="home" class="hidden"></div>
+
+  <button id="backbar" class="hidden">
+    <svg viewBox="0 0 24 24"><path d="M15.7 4.8 L8.3 12 L15.7 19.2"/></svg>
+    <span id="backword">All modules</span>
+  </button>
+
+  <div class="card mod" id="m-experiment">
+    <h2><span id="runhead">Measurement</span><span class="what" id="runwhat"></span></h2>
+    <!-- The panel's own lamp row, in its order: SafeTip Guard, Poking,
+         Measuring, centred, 12 px circles. -->
+    <div class="leds" id="leds"></div>
+    <div id="bars"></div>
+    <!-- The panel's own read-outs beside its plots. -->
+    <div id="runtime"></div>
+    <!-- A 2D sweep fills this with one column per recorded channel, the way
+         the Point 2D panel does: the colour map over its line plot, 3:2. -->
+    <!-- Frame 2D only: ONE Slow / Fast pick for every channel. -->
+    <div id="fpick" class="fpick hidden"></div>
+    <div id="plots"></div>
+    <!-- chevron geometry is ui_style.draw_chevron's reviewed 24-unit design:
+         half span 7.2, depth 7.4, stroke 2.8, round caps and joins. -->
+    <div class="pager hidden" id="pager">
+      <button id="pprev" title="Previous channels" aria-label="Previous channels">
+        <svg viewBox="0 0 24 24"><path d="M15.7 4.8 L8.3 12 L15.7 19.2"/></svg></button>
+      <span class="n" id="ppage">1 / 1</span>
+      <button id="pnext" title="More channels" aria-label="More channels">
+        <svg viewBox="0 0 24 24"><path d="M8.3 4.8 L15.7 12 L8.3 19.2"/></svg></button>
+    </div>
+    <!-- The run's own header, exactly as the .dat carries it: this is what
+         the panel's tabs were set to, written by the run itself. -->
+    <div id="cfg" class="seclist"></div>
+    <!-- and anything else (a poke trace) keeps the single picked column -->
+    <div id="legacy" class="hidden">
+      <div style="margin-top:10px"><select id="col"></select></div>
+      <canvas id="plot"></canvas>
+    </div>
+  </div>
+
+  <div class="card mod" id="m-fridge"><h2>Fridge Status</h2><div id="fridge"></div></div>
+  <div class="card mod" id="m-log"><h2>System Log</h2><div class="log" id="log"></div></div>
+  <div class="card mod" id="m-account"><h2>Account</h2>
+    <div id="account"></div></div>
+  <div class="card mod" id="m-insts"><h2>Instrument Connections</h2>
+    <div id="insts"></div></div>
+  <div class="card mod" id="m-xlog"><h2>Experiment Log</h2>
+    <div id="xlog" class="seclist"></div></div>
+  <!-- THE FOOTER: the main window's own two lines (lbl_version), which name
+       the lab and so arrive sealed with the data like everything else here. -->
+  <footer id="foot" class="hidden"></footer>
+</div>
+
+<script>
+/* ---------- the theme ---------------------------------------------------- */
+/* Day, Night, or whatever the system is on. Chosen here rather than matched
+   in CSS so the three-way choice has one place to live; the head script has
+   already applied it before the first paint. */
+const THEME_KEY = "rv.theme";
+function themeMode(){
+  try { return localStorage.getItem(THEME_KEY) || "system"; }
+  catch(e){ return "system"; }
+}
+function applyTheme(mode){
+  const dark = mode === "night" || (mode !== "day" &&
+    window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.theme = dark ? "night" : "day";
+  /* the phone's bar follows the ground (--ground, day and night) */
+  const tc = document.querySelector('meta[name="theme-color"]');
+  if(tc) tc.content = dark ? "#353535" : "#f0f0f0";
+  const seg = document.querySelector("#themeseg");
+  if(!seg) return;
+  const btns = [...seg.querySelectorAll("button")];
+  btns.forEach(b => b.classList.toggle("on", b.dataset.mode === mode));
+  const i = Math.max(0, btns.findIndex(b => b.dataset.mode === mode));
+  const t = document.querySelector("#segthumb");
+  if(t) t.style.transform = "translateX(" + (i * 26) + "px)";
+}
+/* The whole window through a fade, which is what the app allows here and
+   all it allows. The plots are redrawn in the middle of it: a canvas is a
+   bitmap and took its colours from the variables when it was drawn, so
+   without this the page turns dark around plots still in daylight. */
+function setTheme(mode){
+  try { localStorage.setItem(THEME_KEY, mode); } catch(e){}
+  /* The plots are repainted with the colours, inside whichever transition
+     runs: a canvas keeps the pixels it was drawn with. */
+  const swap = () => { applyTheme(mode); redrawOpen(); };
+
+  if(document.startViewTransition){
+    document.startViewTransition(swap);
+    return;
+  }
+  /* No snapshot available: dip, but shallowly and unhurriedly. A deep quick
+     dip is what reads as a flinch. */
+  const root = document.documentElement;
+  const half = 180;
+  root.style.transition = "opacity " + half + "ms ease";
+  root.style.opacity = "0.55";
+  setTimeout(() => {
+    swap();
+    root.style.opacity = "1";
+    setTimeout(() => { root.style.transition = root.style.opacity = ""; },
+               half + 20);
+  }, half);
+}
+
+const RAW = "https://raw.githubusercontent.com/sx5379/youyu/data/status.json";
+/* WHO THIS IS, SEALED WITH THE SAME PASSPHRASE as the data. Publishing
+   replaces this object; left as it is, the page simply does not know its
+   own name, which is the safe way for this to fail. */
+const BRAND = {"v":1,"kdf":"PBKDF2-SHA256","rounds":200000,"enc":"AES-256-GCM","zip":"gzip","salt":"on8r6cENxbrkbY4hNiXEhg==","iv":"xh5RHRd3d9/SEntE","ct":"zJtwjVMrNrCqCRSlZc0Ee3GGVofRgkGUPG46K+v0o/mA0maLoMAWea1zkg8FSclNPFFHcEntDUxsORBCLTj/URL6h8pUtung2gSIUeWRYlAJM/oQBHb1Tfb2IDGhIM+RnrRGJdPGZUPGBkmFqG1oPQBcJhCKxuTWE/t6NJmh7KCEbbc+LNw5FMYLcPvbcn9qprVVyrnTHZgJJrMkA36Wr8p8z0c1DirmakPdPqD2xiwkXcdwIAqOq/YwPsXTk6MpQ7D4Yb/+IXybnu8Ocm/xEe2q3Zvi3mN0e5uOTQNp6xXg3rBhC43cu8dqesPW7JcJd6PJ6iYcjW+JI/mP5pWK+qJOzX0Xhp7S/BcPif5GLcKsxw8Xzn5NhOV3JPNZLbidN0uVaw7x6iPDYYU03VfV00MpXDJevY2+QjOkr3w+w9LI4Ou5CwcnoYV/GDN9W73D7SiqbNENhni+g0UFU5p5kLaUs0m2E5MQBy48v72SYX2G1JeMBHGlU13v14Gl2aNO1UM26H497pB7QEoEOzRvnYYJ0OtpsaXuxDp5VL3XbRf32/MOYfmua0i54OBNfr3rauHV6ygDt8UgRZc0sKLUsAF3u2dO+PXkZVUAYumRxUqTtEOIi32IaaddwOu5cpaPAD8CteA7T6+PIMDL+ZZ5U2gl99p1/Q86KBeWCxzbfKKDCYyofuISg8Dd3LoSA7/hp/VpNoMpjbgHTGBQO4gZ3TJWR/8Jm2laYbeBId+Onclf7qAczNZ5tJ9GPG53CP5G4UPSErWonhM9EyeB4i5LQKIpQ+yy6GWOb+G2IISK1EhcQBdBd6hUcQeZcNaVEiibMWqoFukBfyiGjmNA1XxTBOFJBl9EgqcAy52vjzrlaqsfASdDRfRgzj3X4z+llX4M7G6KRGLT1WCX76FxSXtm0Cw9w6Y9htme8WFdCmjz2osyt3hlmwFQCy4XmdCv2Wi2cL0NqZQEMoSo9tRiYAotQvE1321Tb0omQgB5fu/oXS2sFwNl9Z1iRQy9I7Ft8SWi2MArRFbbmw1mTVs+Xb8RR7gFltzTvKGTq2J9mWPIJYQmYA/PvXbS9heJZs+IyfIKNN91Lk2BPsk6YFDkg3YUU7SeJPsEcQ0pCE6fPrlSo1S6UIH0Hf/F2+ubv5Bwlfhp9F4SQvSzc9SZZNMnrdC7dALNJYyaj+V2te7B5h0aWUQQfFEk0+2pxbvVUw2Rsth94bDwXGQTdz1O2LE+w6dLoOR/C9+nd+fj0vlliSKXKviv4dMAHzjE2AheKv2Wp6uyVnWHbApZnjHgwwZQw+x/DIgzSeIHyCS0sGvIE7ZSJOQRbnvfNy77ct8U46xAr+ERlfD0bkbshSJPPVgLskfxGTo+wWed8H0AaCfWYN07460kLpE4eymkFEud4QFAv4jk79oWq07dzJAYGvfDypWheO/YGsCXB11VcS5uc/4l3pEXquYeifX5XBVnD77isaMYZ/yqWmRe/jwJjp+39QIdX8bnBE3RO61Acwb2dkt3VR/gIXJoBO2+HIHy2PTFrRrYlHjayuL55NHQgKAeEWJc3/GeDqI1DwxJLzuxDMh0XHWA+Bx0LrHc2ZeSa3R6sULxephylshD1SjJvTmitbNLNoUE5p46tRzRDImDljW8lkkgbcGVSWLV80SSpoZaHCX5oD/yaNPJCs1RA1fwT7SiX/wFYSMoEmDcWbf7jB70dV74WRvXPMGRwbZAejAVw4syojYOkVnIOlPbpqrAl4gEGyPibz2VdUZdQTWVsNvKxeFdK3OfbMz+OM+SJ3GlHg1z4xl+iIVIf1Wk0XCrHHimcoAwbTdFNFt+mNOGwFNc3iIxgacmMwj0eM9eYLhhqIfGVpf7gqlapObbX1o3bf4pVUPe1+uFxasq+yWvScmq3z9VC578k5cR/1YwO++722MwshXBuJ6TgDBJawFsYOOWX1kbF9qUGsEuIAVWK+WPE7KkAUouNZOmWZYUvrfEpu1M26ERjAG2bd6FuFC89GSgMN9JFK4wYn7XmwRgR4Swm9aLASdDDcSt3BzBVrR7jwOzlmkE0A501fZq1RkdsLEHaKLGVuvJTHPzk6pit+pgrZ7TNg44fiirlCcij/zRiwfuhst/r+PU5gAs7rIgQt2EfrftNlEdk8PVoyjvzumiCx4RkAyI3poSJ6zxGL0zG/VV9YaK802/DhQB1/sp/1LbiVAcGgTegwcwL0f1gM5uKLU+IWUXG1Z39C5rXYjVUhVtX2dvKk9JZFjNTCPMiCbVFxa9s1uUXBvmRD74FZrGO/qCZOrusUpKBalTnZ0THnHCOOpcnMKOuvOpcCs7tdlUta9rmxE9pDRLMyr22oz6Ey1QCrmvO6ELstxoQ+6obvDqnUf2H36Muhn9gtHPUpFPoe0XVSWKd2qg2wfWr7ppIUwT1/Xvv5gI9Cps+RRMoRnH4F73JjYf/jEoHTIaqebi1b4xvs7KEI6cjhgbpknnaThR2UIDbWV6PXfx/sRXlpMWN8mn1VLvkkk4t9zidLBZt6C80oFf+Utun1HnxmqgcAGxAt28Wp5GMRmBDkN3k5upv+fFfobhA6JDOuJ47xeu3dsBfJVObIUqUDLXaUSOVr8fCmTnSfjX1h0p1vEGAYLHcqfKUf5AD3J64s10jhxDJXBc23KcwycXhwH4ACGJx4VyoGP33cvi8oQHWxPp4agvgqLa9rq36EII1JXu40tHKROPYtKdK60QX4iFH45KrA/4LYQDBXx2II1ObiDAKLWHLrekfeUMntEoD3p2Qs/PPcqA/SD9KD8zf4oWGNkfCdWIKfTFpssVpsd2zEv8yDwFfAopfe9oXGhCcqWQROgDh0RAgHZBknFXX4pRpA+1srvLYICX9XaTGxWV03AX+fOvbGh5PQtzcfTPTTklbp6+ajZzNwc/Uc0BQJUvLl2dIN+1H1uungKUj8U+nvuYDLACdKfOwI2G/BtaTkVxiycTwusnDSh8IbYrMkfQMk1yYVMGaLjAUMceiaZAxUrrqCCXtoUfslYKLODM3PO6QeQHtOE1p5U6xP1+hrnCDW3wXyvzRNz9BnUIpkzAQnVHusTezuwwqMAfA6fqSBKkUm5XbpJwi9EkqNIkggMgBBU9nRpFR3hiL9AxKAXetxtDQoEEh3/qIJTRMYUwf0UqQD/CLvkol661PE4bwRFzyXVn7uZ8oEH57aejiQNHC0iIfceAXyRndcL5LogxTfbWNoRi2NZnlIxcadbhoqhs24ZvEG969Kg3jCwmSKQ/H8GTl9BSc5Lhlj+W7i9j3sR+gyTE7O6wcMedY6hfwzVXR5Wj0z1rzQrlc4Kgp/cPOj0uz0ycybWLnxB5pJoYMRQxSKwbfsjGo5RyCvwupuNG13zo6Vvtmn5BJ5RqKUtYVJwPhSOzDy69+1uAJp+diUbPXOGOPFHErQdf0KaaaY4sIxdEF2s+Kw/0ZdtKQuJ/N4YAuCrL+h78W8x52CX4ccHXuLWbZpxrQUdSr1iQMvYmiOGbqrzRS/+QM+VH858EYvId96/I5L3mzQ9I+kUIiiDeofRzpMxUjEjRXmRoxw5c8esCAoyvwHKQ/F2HNBNd8pnB4+VtpEWbhJrgU6HmEzNXWJBMWp2zJhemZz9ouGbVOlY2j60hEWhubhVPAZe9Bzg8ZP5CrwdA99PUkfcQGoOy56yQm8RbVdbcEK75trt+bplv1x+/d86NiOygYDAVNL3tGDFZucJ0XrfGGaiSgiMCWHYDtKzic7gL4dCoYEIwr6gFxlJEVm2l7WWGQLR2cz0o7Ji6C6tIEFxrhtTTZsiUGxpKh88Qs7aDkIj9vDtUWaTWqNGgdcOKUPnGm5thJ5TjrGFV85NtQMDCxvGxtWgzsyA+Kd8Gk921HUefNVkafGgE1CtU1MYwiM6M1FQObYVnywlumKRkskOMBKAr8erYSGhyJ4C5+MkApn90R29FCFPUZodNB5ql2ucwtIiLascRx6isg73Ec1UXZSRlCmE0CGpK5sfjzS+VcxFqk12r6GNv2J8SyilnOsWJT+ceHs4v5GprUjB+yXC7OvGcacPsD+Vsszpl4pQ6JOnrSXba1eSaA8xGAgPSNycVgfG/KyhgIVm4riMz5q9FkTP13DlnYOHzwAvmstPJykYvgGp6zucDbA/0nAKgwBMZp2kzi3p9SMJoumOuq0p9ZeY5ZyXAptTw51MHCRJv73f1j6dUUFkRsQdvw2PbZxzQtACYsu4T95QjbM7+Z+7YeOoHCKVZetpev4L4Iq+xDNHQN95Do7c65g2fOz0vbPN+t6ST+rV3lowfcwQYFoT/FlHeOkP/l9hAc2ARIoEbWMHj5FKeS/YJ7SgnKWsn/mk6wnfJRqgRcyUsWEN0YDwLM5tzwjiaCSVpXbFzAmwTpUt123obtMWLIV4n63ycsyWh7Vk5ThvrK9jrotXp3jVB/KGxQhlhuhn/wLnALd/l6HKrnu7Tpik6OEtkGPEfASL1hSOZj4LKbwHS2niVcaDgMH0Sf1v9UMgQq9RBRyAF1qGzkCZJA319wOspLmSsFrqHTWQCnVdWu2nkevNsu+h3Psk8/di6XS37bfpm7dpLrZF9HePUglNabvisY3hS0IvecSas3soQJQozLg5zLw/Jxy6RsdUC68pMWwUOp7BZs1jkZt58gnLmfVyE3nqq5RlCng/y2TQSiLj60ct0tKVEE7k2w+AeACgDTYgOnParBeXrbSULrhs5XIXjj1Fjl7T+cv0iz6p0AaR1row8MqHTqI+K7reBDlvr2smodDN+tZo2pTnai+vMDRF5YyngPCf1FRErhKDB2xG+a5EXI5bL+y/TtyxXLG5GHUU5BlEp3t9XhSvJjUGwPB/fhxzu6v3UPnzk+E0lc7e/rEaxIdaymtz4ZN3EtWYqBhI8T9pciL5xk895+Vq7Mi38o7qlZ9l7oakDPgimeB9PC+efmAjWDw9dHLA8XMXI3NT7UaBUNR/x7lyfA+tK2kEI9lZcOnLUB1cWGeLydStBs6tTW3k9QHtahYRUfcT+n7axO08WXwoKeXMRyyJLscM+gXgM0JoiR4ChMNaB5iOR2J3eUeYCOuL7UqNLOkF0pRxw7Xrd7jzKsL7V73jtzu2juPDHdiYrUJbNgKTxu/8GiJ/KDYzu/dwjmIkJHqAsxUJtnf12Vg60sFsoXFzMn+uS8t8o/Pq/bBrTT4V8vrbm/tnl6zjSokFkQhm8bIb0tz+uqUux8LIrBIhZTdOjmqFwNUPLuyU6lJ1ELBIkx8DmXbamAdBe/tieHSYh9Q16CrWXQRnPPy7l58ad3UMfYOiNzVy1HEmR4NgFvPtXwM6x6qomWiVNQmZynMv8PVRXMgUgEpvJY6lgJ+Hq/O1vy3Hiw9fa+R+Ug1CfoSVJoW5Huny2gzQHSkSdL89CeqvjZNYTkj7QrKkM9hCxCwNNS5i2SWejoo7YmjVQ8D4249AcY826iSGJuOr0/9ycZEVuL3uwzlO5wT1QcCEEbA==","t":1790437886,"plain_bytes":5422};
+/* What came out of it, once the passphrase has opened it. */
+let BRAND_OPEN = null;
+const FORMAT = 1;
+/* A neutral key: the name of the store is readable in the source. */
+const STORE = "rv.pass";
+/* SERVED FROM THE LAB PC, or published through GitHub? The two have
+   different ceilings and the page follows whichever it is on: a direct
+   connection answers as fast as it is asked and its snapshot is a second old,
+   so it is asked every second; GitHub costs a commit per update and caches
+   for five minutes, so there it is asked every two seconds and the lab PC
+   pushes every five. */
+const DIRECT = !/^https?:\/\/raw\.githubusercontent\.com\//.test(RAW);
+/* This machine's own address, when it has a permanent one. Baked in at
+   publish time; empty means there is only the GitHub route. */
+const DIRECT_URL = "";
+/* How long to give it before deciding it is not there. A second is generous
+   for a tunnel and short enough that a reader does not notice the attempt. */
+const DIRECT_TIMEOUT_MS = 1200;
+/* And how long to leave it alone after it has not answered, so a stopped
+   tunnel does not cost a failed request on every single refresh. */
+const DIRECT_RETRY_MS = 30000;
+let directDeadUntil = 0, onDirect = false;
+
+async function tryDirect(){
+  if(!DIRECT_URL || Date.now() < directDeadUntil) return null;
+  const stop = new AbortController();
+  const timer = setTimeout(() => stop.abort(), DIRECT_TIMEOUT_MS);
+  try {
+    const r = await fetch(DIRECT_URL.replace(/\/$/, "") + "/status.json?t=" + Date.now(),
+                          {cache:"no-store", signal:stop.signal});
+    if(!r.ok) throw new Error("http " + r.status);
+    const b = await r.json();
+    onDirect = true;
+    return b;
+  } catch(e){
+    directDeadUntil = Date.now() + DIRECT_RETRY_MS;
+    onDirect = false;
+    return null;
+  } finally { clearTimeout(timer); }
+}
+const REFRESH_LIVE_MS = DIRECT ? 1000 : 1500;
+/* Ten seconds, not twenty: pressing Start is exactly when somebody looks at
+   their phone, and the lab PC pushes a new run at once. An answer that is the
+   push already on screen costs a small GET and nothing else (tick). */
+const REFRESH_IDLE_MS = DIRECT ? 5000 : 10000;
+/* Whichever route answered decides the pace: a direct answer is a second old,
+   so asking every second is worth it; GitHub's is five, so it is not. */
+const paceLive = () => (DIRECT || onDirect) ? 1000 : REFRESH_LIVE_MS;
+const paceIdle = () => (DIRECT || onDirect) ? 5000 : REFRESH_IDLE_MS;
+
+const $ = s => document.querySelector(s);
+let key = null, chosen = null, lastCols = "", timer = null, lastMap = null;
+
+/* ---------- updating in place -------------------------------------------- */
+/* A refresh used to rebuild every section from a string, every second and a
+   half. So a transition written in the CSS never ran (the element it was on
+   had just been replaced), a lamp could not fade, a bar could not glide, and
+   text the reader was selecting vanished from under them. This lays the new
+   markup over what is on screen and changes only what differs: an element
+   that is still there keeps its identity, and its CSS transitions run. */
+function morph(host, html){
+  const t = document.createElement("template");
+  t.innerHTML = html;
+  morphKids(host, t.content);
+}
+function morphKids(a, b){
+  const an = [...a.childNodes], bn = [...b.childNodes];
+  bn.forEach((y, i) => {
+    const x = an[i];
+    if(!x){ a.appendChild(y); return; }
+    if(x.nodeType !== y.nodeType || x.nodeName !== y.nodeName ||
+       (x.nodeType !== 1 && x.nodeType !== 3)){ a.replaceChild(y, x); return; }
+    if(x.nodeType === 3){
+      if(x.nodeValue !== y.nodeValue) x.nodeValue = y.nodeValue;
+      return;
+    }
+    for(const at of [...x.attributes])
+      if(!y.hasAttribute(at.name)) x.removeAttribute(at.name);
+    for(const at of [...y.attributes])
+      if(x.getAttribute(at.name) !== at.value) x.setAttribute(at.name, at.value);
+    morphKids(x, y);
+  });
+  for(let i = an.length - 1; i >= bn.length; i--) a.removeChild(an[i]);
+}
+
+/* ---------- how old the reading is --------------------------------------- */
+/* The lab PC stamps each push (blob.t). Everything on the page is as old as
+   that stamp, and keeps getting older between pushes, so the ages shown are
+   counted on HERE, every second, rather than frozen at what they were when
+   the snapshot was sealed. */
+let sealT = null;            // blob.t of what is on screen
+let lastIv = null;           // the push on screen (a fresh nonce every push)
+let runActive = false;       // the publisher's own idea of "a run is going"
+let fetchTrouble = "";       // why the last refresh did not arrive, if it did not
+/* The sign-in that opened this page, kept in memory only (it is already in
+   the form, and in this browser's storage if remembered), so a change of the
+   data's secret can be followed without asking again. */
+let cred = null, rekeyTried = null;
+const nowS = () => Date.now() / 1000;
+const sinceSeal = () => sealT == null ? 0 : Math.max(0, nowS() - sealT);
+/* "Updated 12 s ago": a calmer clock than secs(), because it ticks. */
+function ago(s){
+  s = Math.max(0, Math.round(s));
+  if(s < 5) return "just now";
+  if(s < 60) return s + " s ago";
+  const m = Math.floor(s / 60);
+  if(m < 60) return m + " min ago";
+  return Math.floor(m / 60) + " h " + (m % 60) + " min ago";
+}
+/* The publisher's rhythm (publish.loop): during a run it pushes every few
+   seconds, otherwise within a minute of anything changing, and in either
+   case at least every 120 s (the heartbeat). Later than that, plus room for
+   GitHub, is late. */
+const LATE_ACTIVE_S = 180, LATE_IDLE_S = 180, SILENT_S = 900;
+function freshHTML(){
+  if(sealT == null) return "";
+  const age = sinceSeal();
+  const late = age > (runActive ? LATE_ACTIVE_S : LATE_IDLE_S);
+  const why = fetchTrouble ? '<span class="stale">' + esc(fetchTrouble) + '</span> &middot; ' : "";
+  return '<span id="fresh" class="fresh' + (late ? ' late' : '') + '">' + why +
+         'Updated ' + ago(age) + '</span>';
+}
+/* An age that was measured on the lab PC (a fridge sample's) and has kept
+   growing since: data-a is what it was at sealing. */
+function agoSpan(age0, staleAfter, paren){
+  const a = (age0 || 0) + sinceSeal();
+  const stale = a > staleAfter;
+  if(paren && !stale) return '<span class="ago" data-a="' + (age0 || 0) +
+                               '" data-s="' + staleAfter + '" data-p="1"></span>';
+  return '<span class="ago' + (stale ? ' stale' : '') + '" data-a="' + (age0 || 0) +
+         '" data-s="' + staleAfter + '"' + (paren ? ' data-p="1"' : '') + '>' +
+         (paren ? '(' + secs(a) + ' ago)' : secs(a) + ' ago') + '</span>';
+}
+function tickAges(){
+  const f = $("#fresh");
+  if(f){
+    const t = document.createElement("template");
+    t.innerHTML = freshHTML();
+    const n = t.content.firstChild;
+    if(n){ f.className = n.className; f.innerHTML = n.innerHTML; }
+  }
+  document.querySelectorAll(".ago").forEach(el => {
+    const a = parseFloat(el.dataset.a || "0") + sinceSeal();
+    const stale = a > parseFloat(el.dataset.s || "1e9");
+    el.classList.toggle("stale", stale);
+    el.textContent = el.dataset.p ? (stale ? "(" + secs(a) + " ago)" : "")
+                                  : secs(a) + " ago";
+  });
+}
+setInterval(() => { if(key && !document.hidden) tickAges(); }, 1000);
+
+/* ---------- the lock ---------------------------------------------------- */
+const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function deriveKey(pass, salt){
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass),
+                                             "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    {name:"PBKDF2", salt, iterations:200000, hash:"SHA-256"},
+    base, {name:"AES-GCM", length:256}, false, ["decrypt"]);
+}
+
+async function open_(blob, k){
+  const plain = await crypto.subtle.decrypt(
+    {name:"AES-GCM", iv:b64(blob.iv), tagLength:128}, k, b64(blob.ct));
+  const stream = new Blob([plain]).stream().pipeThrough(new DecompressionStream("gzip"));
+  return JSON.parse(await new Response(stream).text());
+}
+
+/* ASK BY PATH, NOT BY QUERY. raw.githubusercontent caches for 300 s and its
+   cache key ignores everything after the "?", measured: three URLs differing
+   only in the query came back as one copy. So "?t=" buys nothing and a reading
+   could be five minutes old however often the lab PC pushes. Every push also
+   publishes itself under n/<unix minute>.json for the next few minutes, so
+   asking for the minute we are in asks for a path nothing has cached yet.
+   The flat file stays as the fallback for the case where the publisher has
+   been stopped for longer than its look-ahead. */
+const MINUTE_BASE = RAW.replace(/\/status\.json$/, "/n/");
+const SECOND_BASE = RAW.replace(/\/status\.json$/, "/s/");
+async function fetchBlob(){
+  /* THE FAST ROUTE FIRST. If the lab PC has a permanent address of its own,
+     ask it; its answer is a second old instead of five, and it costs nobody a
+     commit. When it does not answer, fall through to what GitHub is holding,
+     so the page is never a dead link. */
+  const direct = await tryDirect();
+  if(direct) return direct;
+
+  /* Straight from the lab PC there is no CDN to get past: one request, no
+     cache, and the answer is the newest there is. */
+  if(DIRECT){
+    const r = await fetch(RAW + "?t=" + Date.now(), {cache:"no-store"});
+    if(!r.ok) throw new Error("http " + r.status);
+    return r.json();
+  }
+  /* Through GitHub: the second we are in, then the minute, then the flat
+     file. Each step is a path the CDN cannot already hold a stale copy of, in
+     the order of how fresh it can be; the fallbacks cover a publisher that has
+     been stopped for longer than its look-ahead. */
+  const now = Math.floor(Date.now()/1000);
+  for(const url of [SECOND_BASE + now + ".json",
+                    MINUTE_BASE + Math.floor(now/60) + ".json"]){
+    try {
+      const r = await fetch(url, {cache:"no-store"});
+      if(r.ok) return r.json();
+    } catch(e){ /* try the next one */ }
+  }
+  const r = await fetch(RAW + "?t=" + Date.now(), {cache:"no-store"});
+  if(!r.ok) throw new Error("http " + r.status);
+  return r.json();
+}
+
+/* A PERSON'S OWN SLOT, opened with their NetID and passphrase together:
+   the slot tagged sha256(salt + netid) is theirs, and the key made from
+   "netid\npassphrase" is the only one that opens it (publish.make_slot).
+   What is inside is the data's secret and the name the page greets. Both
+   wrong and one wrong look the same from here, on purpose. */
+async function openSlot(slots, netid, pass){
+  const nid = String(netid || "").trim().toLowerCase();
+  const enc = new TextEncoder();
+  for(const sl of slots || []){
+    const salt = b64(sl.salt);
+    const nb = enc.encode(nid);
+    const both = new Uint8Array(salt.length + nb.length);
+    both.set(salt); both.set(nb, salt.length);
+    const h = new Uint8Array(await crypto.subtle.digest("SHA-256", both));
+    const tag = [...h].map(x => x.toString(16).padStart(2, "0")).join("").slice(0, 24);
+    if(tag !== sl.tag) continue;
+    const base = await crypto.subtle.importKey("raw", enc.encode(nid + "\n" + pass),
+                                               "PBKDF2", false, ["deriveKey"]);
+    const kek = await crypto.subtle.deriveKey(
+      {name:"PBKDF2", salt, iterations:200000, hash:"SHA-256"},
+      base, {name:"AES-GCM", length:256}, false, ["decrypt"]);
+    try {
+      const plain = await crypto.subtle.decrypt(
+        {name:"AES-GCM", iv:b64(sl.iv), additionalData:enc.encode(sl.tag), tagLength:128},
+        kek, b64(sl.ct));
+      return JSON.parse(new TextDecoder().decode(plain));
+    } catch(e){ return null; }
+  }
+  return null;
+}
+
+async function unlock(netid, pass, remember){
+  const msg = $("#lockmsg");
+  if(!window.isSecureContext || !crypto.subtle){
+    msg.innerHTML = '<span class="stale">This browser cannot decrypt here, it needs https.</span>';
+    return false; }
+  if(typeof DecompressionStream === "undefined"){
+    msg.innerHTML = '<span class="stale">This browser is too old to unpack the data ' +
+                    '(Safari 16.4 or Chrome 80 and up).</span>'; return false; }
+  if(!String(netid || "").trim() || !pass){
+    msg.innerHTML = '<span class="stale">Enter your NetID and passphrase.</span>'; return false; }
+  msg.textContent = "Signing in\u2026";
+  let blob;
+  try { blob = await fetchBlob(); }
+  catch(e){ msg.innerHTML = '<span class="stale">Cannot reach the data file (' +
+            e.message + ').</span>'; return false; }
+  if(blob.v !== FORMAT){
+    msg.innerHTML = '<span class="stale">This page is out of step with the lab PC ' +
+                    '(file v' + blob.v + ', page v' + FORMAT + ').</span>'; return false; }
+  let k, who;
+  try {
+    who = await openSlot(blob.slots, netid, pass);
+    if(!who || !who.s) throw new Error("no slot");
+    k = await deriveKey(who.s, b64(blob.salt));
+    await open_(blob, k);
+  } catch(e){
+    msg.innerHTML = '<span class="stale">NetID or passphrase is not right.</span>'; return false; }
+  const secret = who.s;
+  msg.textContent = "";
+  key = k;
+  cred = {n: String(netid).trim(), p: pass};
+  /* The name and the icons, opened with the key just derived. A failure here
+     must not keep the page shut: an unnamed page that works beats a named
+     page that does not, so this is allowed to do nothing. */
+  try {
+    if(BRAND && BRAND.ct){
+      /* Normally sealed with the same salt as the snapshot, so the key just
+         derived opens it and nothing extra runs. Only a mismatch pays for a
+         second derivation, and that is the case that used to fail. */
+      const bk = (BRAND.salt === blob.salt) ? k
+                                            : await deriveKey(secret, b64(BRAND.salt));
+      const b = await open_(BRAND, bk);
+      /* The name is the PERSON's, from their own slot, not the page's. */
+      if(who.name) b.user = who.name;
+      b.netid = who.netid || String(netid).trim().toLowerCase();
+      BRAND_OPEN = b;
+      /* the first name only (the user, 2026-09-23) */
+      if(b.user) $("#welcome").textContent =
+        "Welcome, " + String(b.user).trim().split(/\s+/)[0] + "!";
+      if(b.tab) document.title = b.tab;
+      if(b.title) $("#brandtitle").textContent = b.title;
+      if(b.logo_day) $("#logoday").src = b.logo_day;
+      if(b.logo_night) $("#logonight").src = b.logo_night;
+    }
+  } catch(e){ /* stay anonymous */ }
+  try { remember ? localStorage.setItem(STORE, JSON.stringify({n: String(netid).trim(), p: pass}))
+                 : localStorage.removeItem(STORE); }
+  catch(e){ /* private mode: just do not remember */ }
+  /* DRAWN, THEN SHOWN. The page used to appear as an empty frame that the
+     first refresh then filled in. It is laid out invisibly instead (a hidden
+     canvas has no width, so it cannot be drawn while display:none), filled
+     from the block just opened, and then comes in the way a tab does. */
+  const appEl = $("#app");
+  appEl.style.transition = "none";
+  appEl.style.opacity = "0";
+  $("#lock").classList.add("hidden");
+  appEl.classList.remove("hidden");
+  try { await tick(true, blob); } catch(e){ /* the next refresh will try again */ }
+  delete document.documentElement.dataset.auto;
+  arrive(appEl, "var(--travel)");
+  setTimeout(() => { appEl.style.transition = appEl.style.transform =
+                     appEl.style.opacity = ""; }, 400);
+  return true;
+}
+
+$("#lockform").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("#go").disabled = true;
+  try { await unlock($("#netid").value, $("#pass").value, $("#remember").checked); }
+  finally { $("#go").disabled = false; }
+});
+$("#peek").addEventListener("click", () => {
+  const p = $("#pass"), show = p.type === "password";
+  p.type = show ? "text" : "password";
+  $("#peek").classList.toggle("on", show);
+});
+
+/* ---------- the page ---------------------------------------------------- */
+function secs(s){ if(s==null) return "-";
+  s = Math.round(s); if(s < 60) return s + " s";
+  const m = Math.floor(s/60); if(m < 60) return m + " min " + (s%60) + " s";
+  return Math.floor(m/60) + " h " + (m%60) + " min"; }
+const esc = t => String(t).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+/* A missing value is a dash and nothing else: "- sccm" reads as a reading. */
+function row(k, v, unit){ return '<div class="row"><span class="k">' + k +
+  '</span><span class="v">' + v +
+  (unit && v !== "-" ? ' <span class="u">' + unit + '</span>' : '') +
+  '</span></div>'; }
+/* A reading the log has not got, drawn as the app draws a missing value. */
+const num = v => (v === null || v === undefined || v !== v) ? "-" : v;
+
+function draw(trace, idx){
+  const c = $("#plot"), dpr = window.devicePixelRatio || 1;
+  const w = c.clientWidth, h = c.clientHeight;
+  c.width = w*dpr; c.height = h*dpr;
+  const g = c.getContext("2d"); g.scale(dpr, dpr); g.clearRect(0,0,w,h);
+  const css = getComputedStyle(document.documentElement);
+  const frame = css.getPropertyValue("--frame").trim();
+  const well = css.getPropertyValue("--well").trim();
+  const ys = trace.map(r => r[idx]).filter(v => typeof v === "number");
+  if(well && well !== "transparent"){ g.fillStyle = well; g.fillRect(0, 0, w, h); }
+  /* The app frames a plot on all four sides in PLOT_FRAME_COLOR, 1 px. */
+  g.strokeStyle = frame; g.lineWidth = 1;
+  g.strokeRect(0.5, 0.5, w-1, h-1);
+  if(ys.length < 2){
+    g.fillStyle = css.getPropertyValue("--muted").trim();
+    g.font = '12px "Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,sans-serif';
+    g.fillText("no numeric data in this column", 8, 20); return; }
+  let lo = Math.min(...ys), hi = Math.max(...ys);
+  if(hi === lo){ hi = lo + 1e-12; }
+  const pad = (hi-lo)*0.08; lo -= pad; hi += pad;
+  const m = 1;
+  g.strokeStyle = css.getPropertyValue("--line").trim(); g.lineWidth = 1.6;
+  g.beginPath();
+  ys.forEach((v,i) => { const x = m + i/(ys.length-1)*(w-2*m),
+                        y = (h-m) - (v-lo)/(hi-lo)*(h-2*m);
+    i ? g.lineTo(x,y) : g.moveTo(x,y); });
+  g.stroke();
+  g.fillStyle = css.getPropertyValue("--muted").trim();
+  g.font = '11px "Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,sans-serif';
+  g.fillText(hi.toPrecision(4), 5, 13); g.fillText(lo.toPrecision(4), 5, h-6);
+}
+
+/* ---------- the Point 2D plots ------------------------------------------ */
+/* ColorMapWidget.DEFAULT_CMAP is "RdBu_r", and the app resolves it from these
+   eleven ColorBrewer stops rather than from matplotlib. Interpolated linearly
+   to 256 rows, which is what _interp_colors does, so the page and the panel
+   put the same colour on the same number. */
+/* ONE PALETTE PER PANEL, because the panels do not all use the same one:
+   ColorMapWidget defaults to RdBu_r, but the Frame 2D panel sets "Blues" on
+   both of its maps. The Blues stops are sampled from the app's own resolved
+   colormap at the same eleven positions. */
+const CMAPS = {
+  "RdBu_r": ["#053061","#2166ac","#4393c3","#92c5de","#d1e5f0","#f7f7f7",
+             "#fddbc7","#f4a582","#d6604d","#b2182b","#67001f"],
+  "Blues":  ["#f7fbff","#e3eef9","#d0e1f2","#b7d4ea","#94c4df","#6caed6",
+             "#4a98c9","#2f7fbc","#1764ab","#084b93","#08306b"],
+  /* matplotlib viridis: what the Line 1D sweep's colour maps are built with,
+     read off the panel itself (chk_export_grid). */
+  "viridis":["#440154","#482475","#414487","#355f8d","#2a788e","#21918c",
+             "#22a884","#44bf70","#7ad151","#bddf26","#fde725"],
+  /* matplotlib magma at the same eleven stops: what the I-V mapper builds its
+     colour maps with (UI_universal_IV_mapper._cm, cmap="magma"). */
+  "magma":  ["#000004","#140e36","#3b0f70","#641a80","#8c2981","#b73779",
+             "#de4968","#f7705c","#fe9f6d","#fecf92","#fcfdbf"],
+  /* The rest of the I-V mapper's six (Thermal inferno; the analysis maps
+     cividis, plasma), matplotlib at the same eleven stops. */
+  "inferno":["#000004","#160b39","#420a68","#6a176e","#932667","#bc3754",
+             "#dd513a","#f37819","#fca50a","#f6d746","#fcffa4"],
+  "cividis":["#00224e","#083370","#35456c","#4f576c","#666970","#7d7c78",
+             "#948e77","#aea371","#c8b866","#e5cf52","#fee838"],
+  "plasma": ["#0d0887","#41049d","#6a00a8","#8f0da4","#b12a90","#cc4778",
+             "#e16462","#f2844b","#fca636","#fcce25","#f0f921"],
+};
+const _luts = {};
+function lutOf(name){
+  const key = CMAPS[name] ? name : "RdBu_r";
+  if(!_luts[key]){
+    const stop = CMAPS[key].map(h => [parseInt(h.slice(1,3),16),
+                                      parseInt(h.slice(3,5),16),
+                                      parseInt(h.slice(5,7),16)]);
+    const out = new Uint8Array(256*3), m = stop.length - 1;
+    for(let i=0;i<256;i++){
+      const x = i/255*m, k = Math.min(m-1, Math.floor(x)), t = x - k;
+      for(let c=0;c<3;c++) out[i*3+c] = Math.round(stop[k][c]*(1-t) + stop[k+1][c]*t);
+    }
+    _luts[key] = out;
+  }
+  return _luts[key];
+}
+/* The palette the map on screen is drawn in; set from the run's own map. */
+let LUT = lutOf("RdBu_r");
+
+/* SI, THE WAY THE PANEL DOES IT. Both plot axes have enableAutoSIPrefix on, so
+   pyqtgraph takes ONE prefix for the whole axis from the larger end of its
+   range and moves it into the caption: a 0 to 0.1 V axis reads 0 to 100 with
+   "(mV)" underneath. The colorbar is the other form, siFormat per value, which
+   is why its two ends can read "5.241u" and "155.5n". */
+const SI_PRE = ["y","z","a","f","p","n","\u00b5","m","","k","M","G","T","P","E","Z","Y"];
+function siScale(maxAbs){
+  if(!isFinite(maxAbs) || maxAbs === 0) return {scale:1, pre:""};
+  let m = Math.floor(Math.log10(Math.abs(maxAbs))/3);
+  m = Math.min(8, Math.max(-8, m));
+  return {scale: Math.pow(1000, -m), pre: SI_PRE[m+8]};
+}
+function siFormat(v, prec){
+  if(v == null || v !== v) return "-";
+  const s = siScale(v);
+  return trimNum(v*s.scale, prec || 4) + s.pre;
+}
+/* A value and its unit, with the SI prefix moved onto the UNIT, which is
+   where an axis caption puts it: 0.058 V reads "58" and "mV", never "58m V". */
+function siPair(v, unit){
+  if(v == null || v !== v) return {v:"-", u:unit || ""};
+  const ub = unitBase(unit);
+  const s = siScale(v * ub.f);
+  return {v: trimNum(v * ub.f * s.scale, 4), u: s.pre + ub.base};
+}
+function trimNum(v, prec){
+  if(v === 0) return "0";
+  const t = parseFloat(v.toPrecision(prec));
+  return Math.abs(t) >= 1e5 || Math.abs(t) < 1e-4 ? t.toExponential(2) : String(t);
+}
+function ticksOf(lo, hi, target){
+  const span = Math.abs(hi - lo);
+  if(!(span > 0)) return [lo];
+  const raw = span / Math.max(2, target);
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+  const out = [];
+  const a = Math.min(lo, hi), b = Math.max(lo, hi);
+  /* Stepped by MULTIPLYING, not by adding: adding accumulates and the last
+     value drifts past the end of the range, which is how a tick ended up on
+     the wrong side of the frame. */
+  const first = Math.ceil(a/step - 1e-9);
+  const last = Math.floor(b/step + 1e-9);
+  for(let k = first; k <= last; k++){
+    const v = k * step;
+    out.push(Math.abs(v) < step*1e-9 ? 0 : v);
+  }
+  return out.length ? out : [lo, hi];
+}
+/* An axis caption is "name (unit)", which is what setLabel(text=, units=)
+   renders, with the SI prefix folded into the unit as pyqtgraph folds it. */
+/* A UNIT THAT ALREADY CARRIES A PREFIX IS NOT A BASE UNIT. Z stepper is
+   recorded in µm, so an axis of it running to -1740 was being given a second
+   prefix and captioned "kµm", which is not a unit anybody writes. The value
+   is folded back to its base first (-1740 µm is -1.74e-3 m) and the prefix is
+   then chosen once, which is how the panel's axes read: -1.74 mm.
+
+   The remainder has to be a unit we KNOW, or "Torr" would be read as tera-orr
+   and "sccm" as something with an s in front. */
+const SI_FACTOR = {y:1e-24, z:1e-21, a:1e-18, f:1e-15, p:1e-12, n:1e-9,
+                   "µ":1e-6, u:1e-6, m:1e-3, c:1e-2, k:1e3, M:1e6,
+                   G:1e9, T:1e12, P:1e15};
+const SI_BASE = ["m","V","A","Hz","s","T","W","F","J","K","N","Pa","g",
+                 "bar","ohm","Ohm","Ω","eV","rad"];
+function unitBase(unit){
+  const u = String(unit || "");
+  if(!u || u.includes("/") || u.includes("^")) return {f:1, base:u};
+  if(SI_BASE.includes(u)) return {f:1, base:u};
+  const head = u[0], rest = u.slice(1);
+  if(rest && SI_BASE.includes(rest) && SI_FACTOR[head] !== undefined){
+    return {f: SI_FACTOR[head], base: rest};
+  }
+  return {f:1, base:u};
+}
+/* A canvas draws a string, not markup: the panel's display names carry
+   <i> and <sub> for the physics symbols, which the browser lays out in the
+   page's own headings but a canvas would print as angle brackets. */
+function plainText(html){
+  return String(html == null ? "" : html)
+    .replace(/<sub>(.*?)<\/sub>/gi, "$1")
+    .replace(/<sup>(.*?)<\/sup>/gi, "$1")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+}
+const axisText = (name, unit, pre) => {
+  const u = unitBase(unit).base;
+  return plainText(name) + ((u || pre) ? " (" + (pre||"") + u + ")" : "");
+};
+
+/* MARG.t carries the plot TITLE: the panel calls set_title(channel) on the
+   colour map AND on the line plot, so each one is captioned in its own right,
+   above the column header they share. */
+/* The title and the y caption sit closer to the frame than they did: the top
+   band is the title's line height plus a little, not twice it. */
+const MARG = {l:56, r:94, t:26, b:34};
+/* The colorbar group, measured off the panel and laid out from the canvas
+   edge inwards: the z label, the gradient bar, a gap, the histogram's box. */
+const CB = {zlab:24, bar:18, gap:3, hist:28, inset:0.13};
+/* THE PAGE'S OWN FACE, for the canvas too. The body is set in this list; a
+   plot that asked only for '"Segoe UI",sans-serif' fell through to the
+   GENERIC sans on any machine without Segoe UI -- every phone -- and drew its
+   axes in a different font from the text beside them. */
+const FACE = '"Helvetica Neue",Helvetica,Arial,sans-serif';
+const TICK_FONT  = '10.7px ' + FACE;                 /* AxisItem tick, 8 pt   */
+const LABEL_FONT = '12px ' + FACE;                   /* LABEL_FONT_PT 9       */
+const TICK_LEN = 4;                                  /* the marks on a spine  */
+
+function lineColour(i){
+  return getComputedStyle(document.documentElement)
+           .getPropertyValue("--l" + (i % 6)).trim();
+}
+
+function setup(cv, title){
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+  const g = cv.getContext("2d");
+  g.setTransform(dpr,0,0,dpr,0,0);
+  g.clearRect(0,0,w,h);
+  const css = getComputedStyle(document.documentElement);
+  const well = css.getPropertyValue("--well").trim();
+  if(well && well !== "transparent"){ g.fillStyle = well;
+    g.fillRect(MARG.l, MARG.t, w-MARG.l-MARG.r, h-MARG.t-MARG.b); }
+  if(title){
+    g.font = LABEL_FONT; g.textAlign = "center"; g.textBaseline = "alphabetic";
+    g.fillStyle = css.getPropertyValue("--ink").trim();
+    g.fillText(plainText(title), MARG.l + (w-MARG.l-MARG.r)/2, 18);
+  }
+  g.font = TICK_FONT;
+  return {g, w, h, css, iw: w-MARG.l-MARG.r, ih: h-MARG.t-MARG.b};
+}
+
+/* The data area, as a clip. Everything a plot DRAWS lives inside it; the
+   axes and the colorbar are drawn after it is taken off. */
+function clipData(g, w, h){
+  g.save();
+  g.beginPath();
+  g.rect(MARG.l, MARG.t, w - MARG.l - MARG.r, h - MARG.t - MARG.b);
+  g.clip();
+}
+
+function frame(g, w, h, css){
+  g.strokeStyle = css.getPropertyValue("--frame").trim(); g.lineWidth = 1;
+  g.strokeRect(MARG.l + 0.5, MARG.t + 0.5, w-MARG.l-MARG.r-1, h-MARG.t-MARG.b-1);
+}
+
+function xAxis(g, css, w, h, lo, hi, name, unit){
+  const uf = unitBase(unit).f;
+  lo *= uf; hi *= uf;
+  const si = siScale(Math.max(Math.abs(lo), Math.abs(hi)));
+  /* AXIS TYPE IS BLACK. Only the frame and the ticks are grey: the panel inks
+     its tick labels and axis captions with the body colour (setTextPen takes
+     the ink, setPen the frame), and grey type on a plot reads as disabled. */
+  const ink = css.getPropertyValue("--ink").trim();
+  const fr  = css.getPropertyValue("--frame").trim();
+  const y0 = h - MARG.b;
+  g.fillStyle = ink; g.strokeStyle = fr; g.lineWidth = 1;
+  g.textAlign = "center"; g.textBaseline = "top";
+  const iw = w - MARG.l - MARG.r;
+  ticksOf(lo, hi, 5).forEach(v => {
+    const x = MARG.l + (hi === lo ? iw/2 : (v-lo)/(hi-lo)*iw);
+    if(x < MARG.l - 0.25 || x > w - MARG.r + 0.25) return;
+    g.beginPath(); g.moveTo(Math.round(x)+0.5, y0-0.5);
+    g.lineTo(Math.round(x)+0.5, y0-0.5-TICK_LEN); g.stroke();
+    /* A label centred on a tick at the right edge hung half past the frame
+       (the user, 2026-09-23); that one is pulled in to end on the frame. */
+    const txt = trimNum(v*si.scale, 4), right = w - MARG.r;
+    if(x + g.measureText(txt).width/2 > right){
+      g.textAlign = "right"; g.fillText(txt, right, y0+3); g.textAlign = "center";
+    } else {
+      g.fillText(txt, x, y0+3);
+    }
+  });
+  if(name){ g.font = LABEL_FONT;
+    g.fillText(axisText(name, unit, si.pre), MARG.l + (w-MARG.l-MARG.r)/2, y0+15);
+    g.font = TICK_FONT; }
+}
+
+function yAxis(g, css, w, h, lo, hi, name, unit){
+  const uf = unitBase(unit).f;
+  lo *= uf; hi *= uf;
+  const si = siScale(Math.max(Math.abs(lo), Math.abs(hi)));
+  const ink = css.getPropertyValue("--ink").trim();
+  const fr  = css.getPropertyValue("--frame").trim();
+  g.fillStyle = ink; g.strokeStyle = fr; g.lineWidth = 1;
+  g.textAlign = "right"; g.textBaseline = "middle";
+  const ih = h - MARG.t - MARG.b;
+  ticksOf(lo, hi, 5).forEach(v => {
+    const y = (h-MARG.b) - (hi === lo ? ih/2 : (v-lo)/(hi-lo)*ih);
+    if(y < MARG.t - 0.25 || y > h - MARG.b + 0.25) return;
+    g.beginPath(); g.moveTo(MARG.l+0.5, Math.round(y)+0.5);
+    g.lineTo(MARG.l+0.5+TICK_LEN, Math.round(y)+0.5); g.stroke();
+    g.fillText(trimNum(v*si.scale, 4), MARG.l-6, y);
+  });
+  if(name){
+    g.save(); g.translate(9, MARG.t + (h-MARG.t-MARG.b)/2); g.rotate(-Math.PI/2);
+    g.font = LABEL_FONT; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(axisText(name, unit, si.pre), 0, 0);
+    g.restore();
+  }
+}
+
+function drawMap(cv, ch, m){
+  const {g, w, h, css, iw, ih} = setup(cv, ch.title || ch.label);
+  /* A channel may carry its own palette: the I-V mapper colours each of its
+     six maps differently (magma, viridis, inferno, cividis, plasma). */
+  const L = ch.cmap ? lutOf(ch.cmap) : LUT;
+  const bytes = b64(ch.z), cols = m.cols, rows = m.rows;
+  const img = g.createImageData(cols, rows);
+  for(let r=0;r<rows;r++){
+    /* row 0 is the slow axis START, and an axis runs upward, so the first row
+       measured is drawn at the BOTTOM. */
+    /* A scanner frame is the other way up: its first line is the TOP of the
+       scan, so it is drawn at the top. */
+    const src = (m.geom ? r : rows-1-r)*cols;
+    for(let c=0;c<cols;c++){
+      const v = bytes[src+c], o = (r*cols+c)*4;
+      if(v === m.missing){ img.data[o+3] = 0; continue; }
+      img.data[o]   = L[v*3];
+      img.data[o+1] = L[v*3+1];
+      img.data[o+2] = L[v*3+2];
+      img.data[o+3] = 255;
+    }
+  }
+  const off = document.createElement("canvas");
+  off.width = cols; off.height = rows;
+  off.getContext("2d").putImageData(img, 0, 0);
+  g.imageSmoothingEnabled = false;      /* a measured point is a square */
+  if(m.geom){
+    /* PHYSICAL FRAMES: the frame at its centre, its size and the scan
+       controller's angle (clockwise), in the X / Y window the axes are drawn
+       over. (No instrument is named in this file: its source is public.) */
+    const G = m.geom;
+    const kx = iw / (m.fast.end - m.fast.start), ky = ih / (m.slow.end - m.slow.start);
+    g.save();
+    clipData(g, w, h);
+    g.translate(MARG.l + (G.cx - m.fast.start)*kx, MARG.t + (m.slow.end - G.cy)*ky);
+    g.rotate(G.angle * Math.PI / 180);
+    g.drawImage(off, -G.w*kx/2, -G.h*ky/2, G.w*kx, G.h*ky);
+    g.restore();
+    g.restore();
+  } else {
+    g.drawImage(off, MARG.l, MARG.t, iw, ih);
+  }
+
+  /* THE COLORBAR is a HistogramLUTItem: the gradient, the histogram of the
+     data lying against it, the two level values in siFormat, and the z label
+     on its side. */
+  /* Laid out from the canvas edge inwards, as the panel has it: the z label,
+     the gradient bar spanning the plot's height, a gap, then the histogram in
+     a box of its own, inset top and bottom so the bar runs past it. */
+  const bx = w - CB.zlab - CB.bar, bw = CB.bar;
+  const bTop = MARG.t, bH = ih;
+  const hx = bx - CB.gap - CB.hist, hw = CB.hist;
+  const hTop = bTop + bH*CB.inset, hH = bH*(1 - 2*CB.inset);
+  const fr = css.getPropertyValue("--frame").trim();
+
+  /* the histogram's own box: a light ground on a hairline */
+  g.fillStyle = css.getPropertyValue("--well2").trim();
+  g.fillRect(hx, hTop, hw, hH);
+  g.strokeStyle = css.getPropertyValue("--hist-edge").trim(); g.lineWidth = 1;
+  g.strokeRect(hx+0.5, hTop+0.5, hw-1, hH-1);
+
+  /* the histogram itself: a thin outline standing on the box's RIGHT edge,
+     its spikes pointing left, which is how pyqtgraph draws it turned on its
+     side beside the bar. */
+  /* THE PROFILE IS BUILT ON THE LEVELS THAT ARE ACTUALLY THERE, one count per
+     distinct level, so no bin can be empty. Binning the RANGE instead is what
+     made a gate ramp come out striped: its 51 values scattered into 200 bins
+     left most of them empty, and the outline dived back to the baseline at
+     every gap. A ramp's profile is flat, and this draws it flat. */
+  const count = new Int32Array(256);
+  let most = 0, n = 0;
+  for(let i=0;i<bytes.length;i++){
+    if(bytes[i] === m.missing) continue;
+    count[bytes[i]]++; n++;
+  }
+  const levels = [];
+  for(let k=0;k<256;k++){
+    if(count[k] > 0){ levels.push(k); if(count[k] > most) most = count[k]; }
+  }
+  if(most > 0 && levels.length > 1){
+    const base = hx + hw - 1, span = hw - 3;
+    const yOf = k => (hTop + hH) - k/255*hH;
+    g.strokeStyle = css.getPropertyValue("--hist-ink").trim();
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(base, yOf(levels[0]));
+    for(const k of levels) g.lineTo(base - count[k]/most*span, yOf(k));
+    g.lineTo(base, yOf(levels[levels.length-1]));
+    g.stroke();
+  }
+
+  const bar = g.createLinearGradient(0, bTop+bH, 0, bTop);
+  for(let i=0;i<=16;i++){
+    const k = Math.round(i/16*254);
+    bar.addColorStop(i/16, `rgb(${L[k*3]},${L[k*3+1]},${L[k*3+2]})`);
+  }
+  g.fillStyle = bar; g.fillRect(bx, bTop, bw, bH);
+  g.strokeStyle = fr; g.lineWidth = 1;
+  g.strokeRect(bx+0.5, bTop+0.5, bw-1, bH-1);
+
+  /* The two level values are TYPE, so they are the body ink like every other
+     number on the plot. Inking them with the ends of the colormap made each
+     one read as a swatch of its own rather than as a number. */
+  const uf = unitBase(ch.unit).f;
+  g.font = TICK_FONT; g.textAlign = "center";
+  g.fillStyle = css.getPropertyValue("--ink").trim();
+  g.textBaseline = "bottom";
+  g.fillText(siFormat(ch.hi*uf, 4), bx + bw/2, bTop - 3);
+  g.textBaseline = "top";
+  g.fillText(siFormat(ch.lo*uf, 4), bx + bw/2, bTop + bH + 3);
+
+  /* The z label, turned the other way from the y axis: a colorbar's caption
+     reads DOWNWARDS in the panel, where an axis caption reads upwards. */
+  g.save();
+  g.fillStyle = css.getPropertyValue("--ink").trim();
+  g.translate(w - 8, bTop + bH/2); g.rotate(Math.PI/2);
+  g.font = LABEL_FONT; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(axisText(ch.zlabel || ch.label, ch.unit, ""), 0, 0);
+  g.restore();
+
+  frame(g, w, h, css);
+  xAxis(g, css, w, h, m.fast.start, m.fast.end, m.fast.label, m.fast.unit);
+  yAxis(g, css, w, h, m.slow.start, m.slow.end, m.slow.label, m.slow.unit);
+}
+
+function drawLine(cv, ch, m, idx){
+  const {g, w, h, css, iw, ih} = setup(cv, ch.title || ch.label);
+  const ys = ch.line || [];
+  const good = ys.filter(v => typeof v === "number");
+  if(good.length >= 2){
+    let lo = Math.min(...good), hi = Math.max(...good);
+    if(hi === lo){
+      /* A gate recorded as a channel is constant along a fast line. A band
+         around the value puts the flat curve in the middle, where it reads as
+         the flat line it is, instead of on the frame. */
+      const band = Math.abs(lo) > 0 ? Math.abs(lo)*0.05 : 0.5;
+      lo -= band; hi += band;
+    } else {
+      const pad = (hi-lo)*0.08; lo -= pad; hi += pad;
+    }
+    const col = lineColour(idx);
+    /* POSITIONED BY THE AXIS, NOT BY COUNT. The line's points belong to the
+       fast axis's own ticks; spreading however many have arrived across the
+       whole width would put a half-measured line under the wrong numbers. */
+    const ticks = (m.fast && m.fast.ticks) || null;
+    const fx = (m.fast && m.fast.start), fX = (m.fast && m.fast.end);
+    const X = i => {
+      if(ticks && ticks[i] !== undefined && fX !== fx)
+        return MARG.l + (ticks[i]-fx)/(fX-fx)*iw;
+      return MARG.l + (ys.length>1 ? i/(ys.length-1)*iw : iw/2);
+    };
+    const Y = v => (MARG.t+ih) - (v-lo)/(hi-lo)*ih;
+    clipData(g, w, h);
+    g.strokeStyle = col; g.lineWidth = 2; g.lineJoin = "round";
+    g.beginPath();
+    let started = false;
+    ys.forEach((v,i) => {
+      if(typeof v !== "number"){ started = false; return; }
+      started ? g.lineTo(X(i), Y(v)) : g.moveTo(X(i), Y(v)); started = true;
+    });
+    g.stroke();
+    /* A dot on every point, however many, as the panel draws them:
+       LinePlotWidget.SYMBOL_SIZE 5 px, SYMBOL_MAX_POINTS None (the user,
+       2026-09-23: "line plots 没有点？"). */
+    {
+      g.fillStyle = col;
+      ys.forEach((v,i) => {
+        if(typeof v !== "number") return;
+        g.beginPath(); g.arc(X(i), Y(v), 2.5, 0, Math.PI*2); g.fill();
+      });
+    }
+    g.restore();                       // the clip comes off before the axes
+    yAxis(g, css, w, h, lo, hi, ch.ylabel || ch.label, ch.unit);
+  } else {
+    g.fillStyle = css.getPropertyValue("--muted").trim();
+    g.textAlign = "left"; g.textBaseline = "top";
+    g.fillText(ch.note || "waiting for the first line", MARG.l+6, MARG.t+6);
+  }
+  frame(g, w, h, css);
+  xAxis(g, css, w, h, m.fast.start, m.fast.end, m.fast.label, m.fast.unit);
+}
+
+/* HOW MANY COLUMNS FIT. PagedStrip shows three at a time on a desktop; a
+   phone has room for one. The pager turns the rest, and the last page is
+   PADDED to the same number of slots so the columns keep their width
+   instead of stretching, which is what the strip's fixed pitch does. */
+function perPage(width){ return width >= 860 ? 3 : width >= 580 ? 2 : 1; }
+
+/* Which header sections the reader has opened. Kept out here so a refresh
+   every twenty seconds does not shut them again under their hand. */
+const cfgOpen = new Set();
+
+/* ── a colorbar for values that are POINTS, not a grid ────────────────────
+   The same gradient, the same two level values inked with the ends of the
+   colormap, the same z label on its side. No histogram: the grid's has one
+   because a grid has thousands of levels to count, and a path has a dozen. */
+function colorbar(g, w, h, css, ih, lo, hi, label, unit){
+  const bx = w - CB.zlab - CB.bar, bw = CB.bar, bTop = MARG.t, bH = ih;
+  const bar = g.createLinearGradient(0, bTop+bH, 0, bTop);
+  for(let i=0;i<=16;i++){
+    const k = Math.round(i/16*254);
+    bar.addColorStop(i/16, `rgb(${LUT[k*3]},${LUT[k*3+1]},${LUT[k*3+2]})`);
+  }
+  g.fillStyle = bar; g.fillRect(bx, bTop, bw, bH);
+  g.strokeStyle = css.getPropertyValue("--frame").trim(); g.lineWidth = 1;
+  g.strokeRect(bx+0.5, bTop+0.5, bw-1, bH-1);
+  const uf = unitBase(unit).f;
+  g.font = TICK_FONT; g.textAlign = "center";
+  g.fillStyle = css.getPropertyValue("--ink").trim();
+  g.textBaseline = "bottom";
+  g.fillText(siFormat(hi*uf, 4), bx + bw/2, bTop - 3);
+  g.textBaseline = "top";
+  g.fillText(siFormat(lo*uf, 4), bx + bw/2, bTop + bH + 3);
+  if(label){
+    g.save();
+    g.fillStyle = css.getPropertyValue("--ink").trim();
+    g.translate(w - 8, bTop + bH/2); g.rotate(Math.PI/2);
+    g.font = LABEL_FONT; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(axisText(label, unit, ""), 0, 0);
+    g.restore();
+  }
+}
+
+/* ── a run that is a LIST, not a grid ──────────────────────────────────────
+   Poke on Path writes one row per path point: when its pokes started, how
+   many took, and the Z touch average and spread over them. The panel shows
+   that as a record table beside the stage position map; here the map is on
+   top and the table under it (the user, 2026-09-23). Each point is a TILE,
+   filled from the plots' own colormap and carrying the order it was visited,
+   so a value reads the same way wherever it appears. */
+function drawScatter(cv, m){
+  const {g, w, h, css, iw, ih} = setup(cv, m.title || "");
+  const xs = m.x || [], ys = m.y || [], vs = m.v || [];
+  if(!xs.length){
+    g.fillStyle = css.getPropertyValue("--muted").trim();
+    g.textAlign = "left"; g.textBaseline = "top";
+    g.fillText("no points yet", MARG.l+6, MARG.t+6);
+    frame(g, w, h, css); return;
+  }
+  /* A path that has not moved yet has no extent; give the axes a little so
+     its points land in the middle instead of on the frame. */
+  let x0 = Math.min(...xs), x1 = Math.max(...xs);
+  let y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const padX = (x1-x0) || Math.abs(x0)*0.1 || 1;
+  const padY = (y1-y0) || Math.abs(y0)*0.1 || 1;
+  x0 -= padX*0.08; x1 += padX*0.08; y0 -= padY*0.08; y1 += padY*0.08;
+  const good = vs.filter(v => typeof v === "number");
+  const vlo = good.length ? Math.min(...good) : 0;
+  const vhi = good.length ? Math.max(...good) : 1;
+  const span = (vhi - vlo) || 1;
+
+  const X = v => MARG.l + (v-x0)/(x1-x0)*iw;
+  const Y = v => (MARG.t+ih) - (v-y0)/(y1-y0)*ih;
+  /* the path, in the order the points were visited */
+  clipData(g, w, h);
+  g.strokeStyle = css.getPropertyValue("--frame").trim();
+  g.lineWidth = 1;
+  g.beginPath();
+  xs.forEach((x,i) => i ? g.lineTo(X(x), Y(ys[i])) : g.moveTo(X(x), Y(ys[i])));
+  g.stroke();
+  const frameInk = css.getPropertyValue("--frame").trim();
+  /* A TILE PER POINT, as the panel's stage map draws them. Its side is the
+     closest spacing between two points, so the tiles of a dense path meet
+     and those of a sparse one do not swell to fill the frame. */
+  let side = 14;
+  if(xs.length > 1){
+    let near = Infinity;
+    for(let i = 1; i < xs.length; i++){
+      const d = Math.hypot(X(xs[i]) - X(xs[i-1]), Y(ys[i]) - Y(ys[i-1]));
+      if(d > 0.5) near = Math.min(near, d);
+    }
+    if(near !== Infinity) side = Math.max(8, Math.min(34, near));
+  }
+  const half = side / 2;
+  xs.forEach((x,i) => {
+    const v = vs[i];
+    const k = typeof v === "number" ? Math.round((v-vlo)/span*254) : null;
+    const fill = k === null ? css.getPropertyValue("--muted").trim()
+               : `rgb(${LUT[k*3]},${LUT[k*3+1]},${LUT[k*3+2]})`;
+    const cx = X(x), cy = Y(ys[i]);
+    g.fillStyle = fill;
+    g.fillRect(cx - half, cy - half, side, side);
+    g.strokeStyle = frameInk; g.lineWidth = 1;
+    g.strokeRect(cx - half + 0.5, cy - half + 0.5, side - 1, side - 1);
+    /* THE ORDER THEY WERE VISITED, written on the tile, and only when the
+       tile can hold it: the panel leaves the number off a tile too small for
+       it rather than letting it run over the edge. */
+    if(side >= 17){
+      const label = String(i + 1);
+      g.font = "10px " + FACE;
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      /* Dark ink on a pale tile, pale on a dark one, judged from the fill
+         actually used rather than from where it sits in the range. */
+      let lum = 1;
+      if(k !== null){
+        lum = (0.299*LUT[k*3] + 0.587*LUT[k*3+1] + 0.114*LUT[k*3+2]) / 255;
+      }
+      g.fillStyle = lum > 0.55 ? "rgba(0,0,0,.72)" : "rgba(255,255,255,.92)";
+      g.fillText(label, cx, cy + 0.5);
+    }
+  });
+  g.restore();                         // the clip comes off before the axes
+  if(good.length) colorbar(g, w, h, css, ih, vlo, vhi, m.vlabel, m.vunit);
+  frame(g, w, h, css);
+  xAxis(g, css, w, h, x0, x1, m.xlabel, m.xunit);
+  yAxis(g, css, w, h, y0, y1, m.ylabel, m.yunit);
+}
+
+/* ── Poke on Path, as its panel draws it ───────────────────────────────────
+   The XY Scanner Position Map with the progress bar and ETA over it, the Z
+   touch scale beside it, and the run's records beside that; no traces (the
+   user, 2026-09-23). Read off the panel: every path point a navy dot on a
+   square of its Z touch (the square only once the point is poked), the
+   number above the square's top-left corner, black once poked and navy
+   before, the point being poked red, the tip a blue cross, no route line. */
+function popFmt(v){
+  if(typeof v !== "number") return "";
+  return Math.abs(v) >= 1 ? v.toFixed(1) : String(parseFloat(v.toPrecision(2)));
+}
+function drawPopMap(cv, m){
+  const {g, w, h, css, iw, ih} = setup(cv, "");
+  const mp = m.map || {}, P = m.path;
+  const L = lutOf(mp.cmap || "RdBu_r");
+  /* The whole path when the panel sent it, else the points the file has. */
+  let xs, ys, zs;
+  if(P && P.x_nm && P.x_nm.length){
+    xs = P.x_nm; ys = P.y_nm;
+    zs = xs.map((_, i) => { const z = (P.z_um || {})[String(i)];
+                            return typeof z === "number" ? z : null; });
+  } else {
+    xs = mp.x || []; ys = mp.y || []; zs = (mp.v || []).map(v => typeof v === "number" ? v : null);
+  }
+  const done = (m.rows || []).length;
+  if(!xs.length){
+    g.fillStyle = css.getPropertyValue("--muted").trim();
+    g.textAlign = "left"; g.textBaseline = "top"; g.font = TICK_FONT;
+    g.fillText("no points yet", MARG.l+6, MARG.t+6);
+    frame(g, w, h, css); return;
+  }
+  /* EQUAL SCALES, as the panel's map: a square window round the path. */
+  const pts = xs.map((x, i) => [x, ys[i]]);
+  if(P && P.tip_nm) pts.push(P.tip_nm);
+  let x0 = Math.min(...pts.map(p => p[0])), x1 = Math.max(...pts.map(p => p[0]));
+  let y0 = Math.min(...pts.map(p => p[1])), y1 = Math.max(...pts.map(p => p[1]));
+  let span = Math.max(x1 - x0, y1 - y0, 1e-3) * 1.2;
+  let cx0 = (x0 + x1)/2, cy0 = (y0 + y1)/2;
+  /* ZOOMED OR MOVED BY THE READER: their window, kept across refreshes, until
+     they ask for the fit back (double click, or the fit button). */
+  const V = mapViews.pop;
+  if(V){ span = V.span; cx0 = V.cx; cy0 = V.cy; }
+  x0 = cx0 - span/2; x1 = cx0 + span/2; y0 = cy0 - span/2; y1 = cy0 + span/2;
+  const k = iw / span;
+  /* what the gestures need to turn pixels back into nm */
+  cv._pv = {cx: cx0, cy: cy0, span, iw, ih};
+  const X = v => MARG.l + (v - x0) * k, Y = v => MARG.t + ih - (v - y0) * k;
+
+  /* The square is the poke's footprint: 0.6 of the median spacing to the
+     nearest neighbour, 3 to 26 px; the dot 0.45 of it, 3 to 9 px. */
+  let near = [];
+  for(let i = 0; i < xs.length; i++){
+    let d = Infinity;
+    for(let j = 0; j < xs.length; j++) if(j !== i)
+      d = Math.min(d, Math.hypot(xs[i]-xs[j], ys[i]-ys[j]));
+    if(d !== Infinity && d > 0) near.push(d);
+  }
+  near.sort((a, b) => a - b);
+  const med = near.length ? near[Math.floor(near.length/2)] : 50;
+  const sq = Math.round(Math.max(3, Math.min(26, med * 0.6 * k)));
+  const dot = Math.round(Math.max(3, Math.min(9, sq * 0.45)));
+  const good = zs.filter(z => z !== null);
+  const zlo = good.length ? Math.min(...good) : 0, zhi = good.length ? Math.max(...good) : 0;
+  const frameInk = css.getPropertyValue("--frame").trim();
+
+  clipData(g, w, h);
+  /* squares first, under the dots and the numbers */
+  xs.forEach((x, i) => {
+    const z = zs[i];
+    if(z === null) return;
+    const t = zhi > zlo ? (z - zlo)/(zhi - zlo) : 0.5;
+    const c = Math.round(Math.max(0, Math.min(1, t)) * 255);
+    g.fillStyle = `rgb(${L[c*3]},${L[c*3+1]},${L[c*3+2]})`;
+    const px = Math.round(X(x) - sq/2), py = Math.round(Y(ys[i]) - sq/2);
+    g.fillRect(px, py, sq, sq);
+    if(sq >= 9){ g.strokeStyle = frameInk; g.lineWidth = 1;
+                 g.strokeRect(px + 0.5, py + 0.5, sq - 1, sq - 1); }
+  });
+  /* the point being poked now: the first one without a row, while running */
+  const cur = (m.live && done < xs.length) ? done : -1;
+  xs.forEach((x, i) => {
+    const r = (i === cur ? 10 : dot) / 2;
+    g.beginPath(); g.arc(X(x), Y(ys[i]), r, 0, Math.PI*2);
+    if(zs[i] !== null){ g.strokeStyle = "#ffffff"; g.lineWidth = 2; g.stroke(); }
+    g.fillStyle = i === cur ? "#ff0000" : "#003366"; g.fill();
+  });
+  /* each number above its square's top-left corner, when there is room */
+  const minGap = (near.length ? near[0] : Infinity) * k;
+  if(minGap > 16){
+    g.font = "11px " + FACE; g.textAlign = "center"; g.textBaseline = "bottom";
+    xs.forEach((x, i) => {
+      g.fillStyle = zs[i] !== null ? css.getPropertyValue("--ink").trim() : "#003366";
+      g.fillText(String(i + 1), X(x) - sq/2, Y(ys[i]) - sq/2 - 1);
+    });
+  }
+  /* the tip: the panel's hollow blue cross */
+  if(P && P.tip_nm){
+    const tx = X(P.tip_nm[0]), ty = Y(P.tip_nm[1]);
+    g.strokeStyle = "#4F86F7"; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(tx - 7, ty); g.lineTo(tx + 7, ty);
+    g.moveTo(tx, ty - 7); g.lineTo(tx, ty + 7); g.stroke();
+  }
+  g.restore();
+
+  /* THE Z TOUCH SCALE, StageColorBar: its caption over a slim ramp standing
+     on the map's bottom frame line, the two end values beside the ramp. */
+  if(good.length){
+    const bx = w - MARG.r + 10, bw = 16, bH = Math.round(ih * 0.4);
+    const bTop = MARG.t + ih - bH;
+    const grad = g.createLinearGradient(0, bTop + bH, 0, bTop);
+    for(let i = 0; i <= 16; i++){
+      const c = Math.round(i/16*255);
+      grad.addColorStop(i/16, `rgb(${L[c*3]},${L[c*3+1]},${L[c*3+2]})`);
+    }
+    g.fillStyle = grad; g.fillRect(bx, bTop, bw, bH);
+    g.strokeStyle = frameInk; g.lineWidth = 1;
+    g.strokeRect(bx + 0.5, bTop + 0.5, bw - 1, bH - 1);
+    g.fillStyle = css.getPropertyValue("--ink").trim();
+    g.font = TICK_FONT; g.textAlign = "left";
+    g.textBaseline = "top"; g.fillText(popFmt(zhi), bx + bw + 5, bTop);
+    g.textBaseline = "bottom"; g.fillText(popFmt(zlo), bx + bw + 5, bTop + bH);
+    g.textBaseline = "bottom";
+    g.fillText("Z touch", bx, bTop - 6);
+    const tw = g.measureText("Z touch ").width;
+    g.fillStyle = css.getPropertyValue("--unit").trim();
+    /* the micro sign, as the records beside it write it */
+    g.fillText("(" + String(mp.vunit || "um").replace(/^u(?=m$)/, "µ") + ")",
+               bx + tw, bTop - 6);
+  }
+  frame(g, w, h, css);
+  xAxis(g, css, w, h, x0, x1, "X", "nm");
+  yAxis(g, css, w, h, y0, y1, "Y", "nm");
+}
+function renderPop(m){
+  const host = $("#plots");
+  const rows = m.rows || [], cols = m.columns || [];
+  const head = cols.map(c => {
+    const parts = String(c.cap).split("\n");
+    const isUnit = parts[1] && /^\(.*\)$/.test(parts[1]);
+    return '<th>' + esc(parts[0]) +
+      (parts[1] ? '\n<span class="' + (isUnit ? "u" : "") + '">' +
+                  esc(parts[1]) + '</span>' : '') + '</th>';
+  }).join("");
+  const R = m.run || {};
+  /* The run's own line first, as the top level of the panel's list, then its
+     points under it. */
+  const runRow = '<tr class="runrow"><td class="two">' + SEC_CHEV_OPEN + '</td>' +
+    '<td class="two">' + esc(R.start || "") + '</td><td>' + esc(R.points || "") +
+    '</td><td>' + esc(R.mode || "") + '</td><td>' + esc(R.avg || "") + '</td></tr>';
+  const body = rows.map(r =>
+    '<tr>' + r.map(c => '<td class="two">' + esc(c) + '</td>').join("") + '</tr>').join("");
+  const B = m.bar;
+  host.style.flexWrap = "wrap";
+  host.style.flexDirection = "row";
+  host.style.alignItems = "flex-start";
+  /* THE SKELETON ONCE, then only its contents: a refresh every second or two
+     must not rebuild the canvas under a hand that is dragging it. */
+  plotKey = "";                        // the other renderers rebuild after this one
+  if(!host.querySelector(".popmap")){
+    host.innerHTML =
+      '<div class="popmap">' +
+        '<div class="pophead"><span class="poptitle">XY Scanner Position Map</span>' +
+          '<span class="popstate"></span>' +
+          '<button class="popfit" title="Auto scale on all points (or double-click the map)">' +
+          POP_FIT_ICON + '</button></div>' +
+        '<div class="popbar"></div>' +
+        '<canvas class="map"></canvas></div>' +
+      '<div class="poprec">' +
+        '<div class="reccap"></div>' +
+        '<table class="rec"><thead><tr></tr></thead><tbody></tbody></table></div>';
+    wireMapGestures(host.querySelector("canvas.map"),
+                    host.querySelector(".popfit"), "pop", popRedraw);
+  }
+  /* in place: the bar glides, and a row being read is not rebuilt under it */
+  morph(host.querySelector(".popstate"),
+    m.state ? '<span class="pill blue">' + esc(m.state) + '</span>' : '');
+  morph(host.querySelector(".popbar"),
+    (B ? barHTML(B[1] ? B[0]/B[1] : 0, B[0] + ' / ' + B[1]) : '') +
+    '<span class="eta">' + esc(m.eta || "") + '</span>');
+  host.querySelector(".reccap").textContent = m.title || "Poke on Path records";
+  morph(host.querySelector(".rec thead tr"), head);
+  morph(host.querySelector(".rec tbody"), runRow + body);
+  const cv = host.querySelector("canvas.map");
+  const inner = Math.max(60, cv.clientWidth - MARG.l - MARG.r);
+  cv.style.height = Math.round(inner + MARG.t + MARG.b) + "px";
+  drawPopMap(cv, m);
+  $("#pager").classList.add("hidden");
+}
+
+/* ── zoom and move on the position map ─────────────────────────────────────
+   The wheel zooms about the pointer, a drag moves the view, two fingers
+   pinch; a double click (or the fit button, the panel's "Auto scale on all
+   points") gives the whole path back. */
+/* Each map's own window, {cx, cy, span} in its units, or null = fit. */
+const mapViews = {pop: null, xy: null};
+const POP_FIT_ICON = '<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+function popRedraw(){ if(lastMap && lastMap.pop) drawPopMap($("#plots canvas.map"), lastMap); }
+function wireMapGestures(cv, fitBtn, key, redraw){
+  const pv = () => cv._pv;
+  /* a canvas pixel -> nm, from the window the last draw used */
+  const toNm = (px, py) => {
+    const v = pv(), r = cv.getBoundingClientRect();
+    const k = v.iw / v.span;
+    return [v.cx - v.span/2 + (px - r.left - MARG.l) / k,
+            v.cy - v.span/2 + (MARG.t + v.ih - (py - r.top)) / k];
+  };
+  const zoomAt = (px, py, f) => {
+    const v = pv(); if(!v) return;
+    const [ax, ay] = toNm(px, py);
+    const span = Math.max(1e-4, v.span * f);
+    /* the point under the pointer stays under it */
+    mapViews[key] = {span, cx: ax + (v.cx - ax) * f, cy: ay + (v.cy - ay) * f};
+    redraw();
+  };
+  const panBy = (dx, dy) => {
+    const v = pv(); if(!v) return;
+    const k = v.iw / v.span;
+    mapViews[key] = {span: v.span, cx: v.cx - dx / k, cy: v.cy + dy / k};
+    redraw();
+  };
+  cv.addEventListener("wheel", e => {
+    e.preventDefault();
+    zoomAt(e.clientX, e.clientY, Math.pow(1.0015, e.deltaY));
+  }, {passive: false});
+  cv.addEventListener("dblclick", () => { mapViews[key] = null; redraw(); });
+  fitBtn.addEventListener("click", () => { mapViews[key] = null; redraw(); });
+  /* one pointer drags, two pinch */
+  const pts = new Map();
+  let last = null;
+  cv.addEventListener("pointerdown", e => {
+    try { cv.setPointerCapture(e.pointerId); } catch(err){}
+    pts.set(e.pointerId, [e.clientX, e.clientY]);
+    last = null;
+  });
+  cv.addEventListener("pointermove", e => {
+    if(!pts.has(e.pointerId)) return;
+    const prev = pts.get(e.pointerId);
+    pts.set(e.pointerId, [e.clientX, e.clientY]);
+    if(pts.size === 1){
+      panBy(e.clientX - prev[0], e.clientY - prev[1]);
+    } else if(pts.size === 2){
+      const [a, b] = [...pts.values()];
+      const d = Math.hypot(a[0]-b[0], a[1]-b[1]);
+      const mid = [(a[0]+b[0])/2, (a[1]+b[1])/2];
+      if(last && d > 0) zoomAt(mid[0], mid[1], last / d);
+      last = d;
+    }
+  });
+  const up = e => { pts.delete(e.pointerId); last = null; };
+  cv.addEventListener("pointerup", up);
+  cv.addEventListener("pointercancel", up);
+}
+
+/* ── THE APPROACH PANEL, both halves ───────────────────────────────────────
+   Z Approach on the left, Locating Sample XY on the right, each with its
+   state pill and its lamps as the panel lays them out, the Approach Records
+   and the XY Scanning Records one row per run, and the XY Steppers Position
+   Map of the survey on show: the whole plan as outlines with the route's
+   arrows, each stop reached filled in the shown channel's colour. No traces
+   (as Poke on Path, 2026-09-23). */
+const APPR_LEDS = [["ac_in_range", "AC 2nd in range"], ["relock", "Feedback re-locks"],
+                   ["stepper_moving", "Stepper Moving"], ["scanner_moving", "Scanner Moving"],
+                   ["scanner_safetip", "Scanner SafeTip"], ["scanner_low_lim", "Scanner Reach Low Limit"]];
+const XY_LEDS = [["xy_stepper_moving", "XY Steppers Moving"], ["xy_scanner_moving", "XY Scanners Moving"],
+                 ["survey_safetip", "Scanner SafeTip"]];
+function ledGrid(set, leds){
+  return '<div class="aleds">' + set.map(([k, cap]) =>
+    '<span class="grp"><span class="led ' + esc(leds[k] || "off") + '"></span>' +
+    '<span>' + esc(cap) + '</span></span>').join("") + '</div>';
+}
+/* The section's state pill in whatever tone the panel has it in right now;
+   "Idle" in the panel's blue when the panel is not open to say. */
+function apill(p){
+  const t = (p && p.text) || "Idle";
+  const st = (p && p.bg) ? ' style="background:' + p.bg + ';border-color:' + p.edge +
+                           ';color:' + p.ink + '"' : '';
+  return '<span class="apill"' + st + '>' + esc(t) + '</span>';
+}
+function recTable(caps, rows){
+  const head = caps.map(c => '<th>' + esc(c) + '</th>').join("");
+  const n0 = 0;
+  const body = rows.map((r, i) =>
+    '<tr class="' + (r.here ? "here" : "") + '"><td class="two">' + (n0 + i + 1) + '</td>' +
+    r.cells.map(c => '<td class="two">' + esc(c) + '</td>').join("") + '</tr>').join("");
+  return '<table class="rec"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
+}
+function drawXYMap(cv, M){
+  const {g, w, h, css, iw, ih} = setup(cv, "");
+  const L = lutOf("RdBu_r");
+  const stops = M.stops || [], outs = M.outlines || [], done = M.done || [];
+  const all = stops.concat(done.map(d => [d[0], d[1]]));
+  if(!all.length){
+    g.fillStyle = css.getPropertyValue("--muted").trim();
+    g.textAlign = "left"; g.textBaseline = "top"; g.font = TICK_FONT;
+    g.fillText("no survey yet", MARG.l + 6, MARG.t + 6);
+    frame(g, w, h, css); return;
+  }
+  let x0 = Math.min(...all.map(p => p[0])), x1 = Math.max(...all.map(p => p[0]));
+  let y0 = Math.min(...all.map(p => p[1])), y1 = Math.max(...all.map(p => p[1]));
+  let span = Math.max(x1 - x0, y1 - y0, (M.w || 20) * 3) * 1.25;
+  let cx0 = (x0 + x1)/2, cy0 = (y0 + y1)/2;
+  const V = mapViews.xy;
+  if(V){ span = V.span; cx0 = V.cx; cy0 = V.cy; }
+  x0 = cx0 - span/2; x1 = cx0 + span/2; y0 = cy0 - span/2; y1 = cy0 + span/2;
+  const k = iw / span;
+  cv._pv = {cx: cx0, cy: cy0, span, iw, ih};
+  const X = v => MARG.l + (v - x0) * k, Y = v => MARG.t + ih - (v - y0) * k;
+  const frameInk = css.getPropertyValue("--frame").trim();
+  const vals = done.map(d => d[2]).filter(v => typeof v === "number");
+  const lo = vals.length ? Math.min(...vals) : 0, hi = vals.length ? Math.max(...vals) : 0;
+  clipData(g, w, h);
+  /* the plan: every cell the survey was going to visit, as its outline */
+  const minPx = 6;
+  const cell = (o, fill) => {
+    const pts = o.map(p => [X(p[0]), Y(p[1])]);
+    const cxp = pts.reduce((a, p) => a + p[0], 0) / pts.length;
+    const cyp = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+    const size = Math.max(...pts.map(p => Math.abs(p[0] - cxp))) * 2;
+    g.beginPath();
+    if(size < minPx){ g.rect(Math.round(cxp - minPx/2) + 0.5, Math.round(cyp - minPx/2) + 0.5, minPx - 1, minPx - 1); }
+    else { pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); }
+    if(fill){ g.fillStyle = fill; g.fill(); }
+    g.strokeStyle = frameInk; g.lineWidth = 1; g.stroke();
+  };
+  outs.forEach(o => cell(o, null));
+  /* the route, one small arrow between each stop and the next */
+  g.strokeStyle = frameInk; g.fillStyle = frameInk; g.lineWidth = 1;
+  for(let i = 1; i < stops.length; i++){
+    const ax = X(stops[i-1][0]), ay = Y(stops[i-1][1]), bx = X(stops[i][0]), by = Y(stops[i][1]);
+    const d = Math.hypot(bx - ax, by - ay);
+    if(d < 24) continue;
+    const ux = (bx - ax)/d, uy = (by - ay)/d, mx = (ax + bx)/2, my = (ay + by)/2;
+    g.beginPath(); g.moveTo(mx - ux*9, my - uy*9); g.lineTo(mx + ux*5, my + uy*5); g.stroke();
+    g.beginPath(); g.moveTo(mx + ux*9, my + uy*9);
+    g.lineTo(mx + ux*3 - uy*3.5, my + uy*3 + ux*3.5); g.lineTo(mx + ux*3 + uy*3.5, my + uy*3 - ux*3.5);
+    g.closePath(); g.fill();
+  }
+  /* the stops reached, filled in the shown channel's colour */
+  const hw = (M.w || 20)/2, hh = (M.h || 20)/2;
+  done.forEach(d => {
+    const v = d[2];
+    let fill = css.getPropertyValue("--muted").trim();
+    if(typeof v === "number"){
+      const t = hi > lo ? (v - lo)/(hi - lo) : 0.5;
+      const c = Math.round(Math.max(0, Math.min(1, t)) * 255);
+      fill = `rgb(${L[c*3]},${L[c*3+1]},${L[c*3+2]})`;
+    }
+    cell([[d[0]-hw, d[1]-hh], [d[0]+hw, d[1]-hh], [d[0]+hw, d[1]+hh], [d[0]-hw, d[1]+hh]], fill);
+  });
+  g.restore();
+  /* the channel's scale, the StageColorBar beside the map */
+  if(vals.length){
+    const bx = w - MARG.r + 10, bw = 16, bH = Math.round(ih * 0.4), bTop = MARG.t + ih - bH;
+    const grad = g.createLinearGradient(0, bTop + bH, 0, bTop);
+    for(let i = 0; i <= 16; i++){
+      const c = Math.round(i/16*255);
+      grad.addColorStop(i/16, `rgb(${L[c*3]},${L[c*3+1]},${L[c*3+2]})`);
+    }
+    g.fillStyle = grad; g.fillRect(bx, bTop, bw, bH);
+    g.strokeStyle = frameInk; g.lineWidth = 1; g.strokeRect(bx + 0.5, bTop + 0.5, bw - 1, bH - 1);
+    const uf = unitBase(M.unit).f;
+    g.fillStyle = css.getPropertyValue("--ink").trim(); g.font = TICK_FONT; g.textAlign = "left";
+    g.textBaseline = "top"; g.fillText(siFormat(hi*uf, 3) + (unitBase(M.unit).base || ""), bx + bw + 5, bTop);
+    g.textBaseline = "bottom"; g.fillText(siFormat(lo*uf, 3) + (unitBase(M.unit).base || ""), bx + bw + 5, bTop + bH);
+    g.fillText(M.signal || "", bx, bTop - 6);
+    const tw = g.measureText((M.signal || "") + " ").width;
+    g.fillStyle = css.getPropertyValue("--unit").trim();
+    if(M.unit) g.fillText("(" + String(M.unit).replace(/^u(?=m$)/, "µ") + ")",
+                          bx + tw, bTop - 6);
+  }
+  frame(g, w, h, css);
+  xAxis(g, css, w, h, x0, x1, "X", "um");
+  yAxis(g, css, w, h, y0, y1, "Y", "um");
+}
+function xyRedraw(){ if(lastMap && lastMap.kind === "approach")
+  drawXYMap($("#plots canvas.xymap"), lastMap.map || {}); }
+function renderApproach(m){
+  const host = $("#plots");
+  const leds = m._leds || {}, P = m.pills || {};
+  host.style.flexWrap = "wrap"; host.style.flexDirection = "row"; host.style.alignItems = "flex-start";
+  plotKey = "";
+  if(!host.querySelector(".apz")){
+    host.innerHTML =
+      '<div class="asec apz"><div class="ahead"><span class="atitle">' + SEC_TRI +
+        'Z Approach</span><span class="zpill"></span><span class="amode"></span></div>' +
+        '<div class="zleds"></div>' +
+        '<div class="reccap">Approach Records</div><div class="ascroll zrec"></div></div>' +
+      '<div class="asec apxy"><div class="ahead"><span class="atitle">' + SEC_TRI +
+        'Locating Sample XY</span><span class="xpill"></span></div>' +
+        '<div class="xleds"></div>' +
+        '<div class="pophead"><span class="poptitle">XY Steppers Position Map</span>' +
+        '<button class="popfit" title="Auto scale on all points (or double-click the map)">' +
+        POP_FIT_ICON + '</button></div>' +
+        '<div class="popbar xybar"></div><canvas class="map xymap"></canvas>' +
+        '<div class="reccap">XY Scanning Records</div><div class="ascroll xyrec"></div></div>';
+    wireMapGestures(host.querySelector("canvas.xymap"), host.querySelector(".apxy .popfit"),
+                    "xy", xyRedraw);
+  }
+  morph(host.querySelector(".zpill"), apill(P.approach));
+  morph(host.querySelector(".xpill"), apill(P.locating));
+  /* Approach mode, as the panel's segmented control shows it (read only). */
+  const mode = String(m.mode || "Thermal");
+  const poke = /^pok/i.test(mode);
+  host.querySelector(".amode").innerHTML = '<span class="acap">Approach mode</span>' +
+    '<span class="seg ro"><span class="thumb"></span>' +
+    '<span class="' + (poke ? '' : 'on') + '" data-d="fwd" data-w="Thermal">Thermal</span>' +
+    '<span class="' + (poke ? 'on' : '') + '" data-d="bwd" data-w="Poking">Poking</span></span>';
+  host.querySelectorAll(".amode .seg").forEach(sg => placeSegThumb(sg, false));
+  /* in place, so a lamp that changes fades as the panel's do */
+  morph(host.querySelector(".zleds"), ledGrid(APPR_LEDS, leds));
+  morph(host.querySelector(".xleds"), ledGrid(XY_LEDS, leds));
+  /* the lists, newest at the bottom and scrolled to it, as the panel's are */
+  const put = (sel, caps, rows) => {
+    const box = host.querySelector(sel);
+    const atEnd = !box.dataset.n || box.scrollTop + box.clientHeight >= box.scrollHeight - 4;
+    morph(box, recTable(caps, rows));
+    if(atEnd) box.scrollTop = box.scrollHeight;
+    box.dataset.n = String(rows.length);
+  };
+  put(".zrec", ["#", "Time", "Mode", "Cycle Taken", "Result"], m.z_rows || []);
+  put(".xyrec", ["#", "Time", "Z step (µm)", "Z scan (µm)", "Signal"], m.xy_rows || []);
+  const M = m.map || {}, B = M.bar;
+  morph(host.querySelector(".xybar"), B ? barHTML(B[1] ? B[0]/B[1] : 0, B[0] + ' / ' + B[1]) : '');
+  const cv = host.querySelector("canvas.xymap");
+  const inner = Math.max(60, cv.clientWidth - MARG.l - MARG.r);
+  cv.style.height = Math.round(inner + MARG.t + MARG.b) + "px";
+  drawXYMap(cv, M);
+  $("#pager").classList.add("hidden");
+}
+
+function renderRecords(m){
+  if(m.pop) return renderPop(m);
+  LUT = lutOf(m.cmap);
+  const host = $("#plots");
+  const rows = m.rows || [], cols = m.columns || [];
+  const twoLine = rows.some(r => r.some(c => String(c).includes("\n")));
+  const head = cols.map(c => {
+    const parts = String(c.cap).split("\n");
+    const isUnit = parts[1] && /^\(.*\)$/.test(parts[1]);
+    return '<th>' + esc(parts[0]) +
+      (parts[1] ? '\n<span class="' + (isUnit ? "u" : "") + '">' +
+                  esc(parts[1]) + '</span>' : '') + '</th>';
+  }).join("");
+  const body = rows.map(r =>
+    '<tr>' + r.map(c => '<td class="' + (twoLine ? "two" : "") + '">' +
+                        esc(c) + '</td>').join("") + '</tr>').join("");
+  /* STACKED, not side by side: the map, then the table under it. */
+  host.style.flexWrap = "";
+  host.style.flexDirection = "column";
+  host.style.alignItems = "stretch";
+  host.innerHTML =
+    '<div class="chan recmap"><canvas class="map"></canvas></div>' +
+    '<div style="min-width:0">' +
+      '<div class="reccap">' + esc(m.title || "Records") + '</div>' +
+      '<table class="rec"><thead><tr>' + head + '</tr></thead>' +
+      '<tbody>' + body + '</tbody></table></div>';
+  const cv = host.querySelector("canvas.map");
+  const inner = Math.max(60, cv.clientWidth - MARG.l - MARG.r);
+  cv.style.height = Math.round(inner + MARG.t + MARG.b) + "px";
+  drawScatter(cv, m.map || {});
+  $("#pager").classList.add("hidden");
+}
+
+/* ── curves against one axis ───────────────────────────────────────────────
+   A 1D sweep, a descent, a poke's own trace: one plot per channel, the run's
+   swept parameter or its clock along the bottom. */
+function lighten(rgbish, amount){
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(rgbish.trim());
+  if(!m) return rgbish;
+  const mix = v => Math.round(parseInt(v,16) + (255 - parseInt(v,16))*amount);
+  return `rgb(${mix(m[1])},${mix(m[2])},${mix(m[3])})`;
+}
+
+function drawCurves(cv, ch, X, idx){
+  const {g, w, h, css, iw, ih} = setup(cv, ch.label);
+  const xs = X.values || [];
+  const sets = [["fwd", ch.fwd, lineColour(idx)],
+                ["bwd", ch.bwd, lighten(lineColour(idx), 0.45)]]
+               .filter(([, ser]) => ser && ser.some(v => typeof v === "number"));
+  if(!sets.length){
+    g.fillStyle = css.getPropertyValue("--muted").trim();
+    g.textAlign = "left"; g.textBaseline = "top";
+    g.fillText("waiting for data", MARG.l+6, MARG.t+6);
+    frame(g, w, h, css);
+    xAxis(g, css, w, h, X.lo, X.hi, X.label, X.unit);
+    return;
+  }
+  const all = [];
+  sets.forEach(([, ser]) => ser.forEach(v => { if(typeof v === "number") all.push(v); }));
+  let lo = Math.min(...all), hi = Math.max(...all);
+  if(hi === lo){
+    const band = Math.abs(lo) > 0 ? Math.abs(lo)*0.05 : 0.5;
+    lo -= band; hi += band;
+  } else { const pad = (hi-lo)*0.08; lo -= pad; hi += pad; }
+
+  const xlo = X.lo, xhi = (X.hi === X.lo) ? X.lo + 1 : X.hi;
+  const PX = v => MARG.l + (v-xlo)/(xhi-xlo)*iw;
+  const PY = v => (MARG.t+ih) - (v-lo)/(hi-lo)*ih;
+  clipData(g, w, h);
+  sets.forEach(([, ser, colour]) => {
+    g.strokeStyle = colour; g.lineWidth = 2; g.lineJoin = "round";
+    g.beginPath();
+    let started = false;
+    ser.forEach((v, i) => {
+      const x = xs[i];
+      if(typeof v !== "number" || typeof x !== "number"){ started = false; return; }
+      started ? g.lineTo(PX(x), PY(v)) : g.moveTo(PX(x), PY(v));
+      started = true;
+    });
+    g.stroke();
+  });
+  g.restore();                         // the clip comes off before the axes
+  /* Which pass is which, only when there are two of them, and in the band
+     the title sits in rather than on the frame's corner. */
+  if(sets.length > 1){
+    g.font = TICK_FONT; g.textAlign = "right"; g.textBaseline = "alphabetic";
+    let x = w - MARG.r;
+    for(let i = sets.length - 1; i >= 0; i--){
+      const [tag, , colour] = sets[i];
+      const word = tag === "bwd" ? "Bwd" : "Fwd";
+      g.fillStyle = colour;
+      g.fillText(word, x, MARG.t - 5);
+      x -= g.measureText(word).width + 7;
+    }
+  }
+  frame(g, w, h, css);
+  yAxis(g, css, w, h, lo, hi, ch.label, ch.unit);
+  xAxis(g, css, w, h, X.lo, X.hi, X.label, X.unit);
+}
+
+let curveKey = "";
+function renderCurves(m){
+  const host = $("#plots");
+  const chans = m.channels || [];
+  const pp = perPage(host.clientWidth || document.body.clientWidth);
+  const pages = Math.max(1, Math.ceil(chans.length / pp));
+  page = Math.min(Math.max(0, page), pages - 1);
+  const shown = chans.slice(page*pp, page*pp + pp);
+
+  $("#pager").classList.toggle("hidden", pages < 2);
+  $("#ppage").textContent = (page + 1) + " / " + pages;
+  $("#pprev").disabled = page === 0;
+  $("#pnext").disabled = page >= pages - 1;
+
+  const key = "cur:" + pp + "@" + page + ":" + shown.map(c => c.name).join(",");
+  if(key !== curveKey){
+    curveKey = key;
+    let html = shown.map((c, k) =>
+      '<div class="chan"><div class="chead">' +
+      '<span class="cap">Display channel ' + (page*pp + k + 1) + '</span>' +
+      '<span>' + c.label + '</span>' +
+      (c.unit ? '<span class="u">(' + esc(c.unit) + ')</span>' : '') + '</div>' +
+      '<canvas class="lp"></canvas></div>').join("");
+    for(let k = shown.length; k < pp; k++) html += '<div class="chan empty"></div>';
+    host.innerHTML = html;
+  }
+  host.querySelectorAll(".chan").forEach((el, i) => {
+    const c = shown[i];
+    const lp = el.querySelector("canvas.lp");
+    if(!lp) return;
+    const inner = Math.max(60, lp.clientWidth - MARG.l - MARG.r);
+    lp.style.height = Math.round(inner*2/3 + MARG.t + MARG.b) + "px";
+    if(c) drawCurves(lp, c, m.x || {}, page*pp + i);
+  });
+}
+
+let plotKey = "", page = 0;
+let lastRunFile;             // the run file the toggles and page belong to
+/* Which pass each channel is showing, by channel name, because the column a
+   channel sits in changes as the pager turns. The panel's toggle is per
+   display column too. */
+const dirOf = {};
+/* A channel as it should be drawn: the backward pass swapped in when that is
+   what the column is showing. Everything downstream then needs no idea that
+   there are two. */
+function passOf(c){
+  if(!c || dirOf[c.name] !== "bwd" || c.z_b === undefined) return c;
+  return Object.assign({}, c, {z: c.z_b, lo: c.lo_b, hi: c.hi_b,
+                               line: c.line_b || c.line});
+}
+/* Lay the pill over the selected segment, from that segment's own box, as
+   _seg_attach_thumb does. Only a click animates; a fresh control is placed
+   where it belongs without sliding in from the left. */
+function placeSegThumb(seg, animated){
+  const thumb = seg.querySelector(".thumb"), on = seg.querySelector("span[data-d].on");
+  if(!thumb || !on) return;
+  if(animated) seg.classList.add("anim");
+  thumb.style.left = on.offsetLeft + "px";
+  thumb.style.width = on.offsetWidth + "px";
+}
+/* Clicking a segment redraws that column from the other pass. Bound on the
+   host once, so it survives the markup being rebuilt by the pager, and shared
+   by every renderer that has the toggle. */
+function wireDirs(host){
+  if(host.dataset.dirWired) return;
+  host.dataset.dirWired = "1";
+  host.addEventListener("click", ev => {
+    const seg = ev.target.closest(".seg[data-ch]");
+    if(!seg || seg.classList.contains("off")) return;
+    const want = ev.target.dataset.d;
+    if(!want || dirOf[seg.dataset.ch] === want) return;
+    dirOf[seg.dataset.ch] = want;
+    /* Slide the pill and recolour the words NOW, so the control answers at
+       once; the plot is redrawn under it. */
+    seg.querySelectorAll("span[data-d]").forEach(sp =>
+      sp.classList.toggle("on", sp.dataset.d === want));
+    placeSegThumb(seg, true);
+    if(lastMap) renderAny(lastMap);
+  });
+}
+function renderAny(m){
+  m.kind === "approach" ? renderApproach(m)
+    : m.kind === "records" ? renderRecords(m)
+    : m.kind === "curves" ? renderCurves(m)
+    : m.kind === "frames" ? renderFrames(m)
+    : renderPlots(m);
+}
+/* The direction toggle's markup, direction_toggle as the panels build it. */
+function segHTML(c, m, two){
+  const bwd = two && dirOf[c.name] === "bwd";
+  const [wf, wb] = m.dirs || ["Fwd", "Bwd"];
+  return '<span class="seg' + (two ? '' : ' off') + '" data-ch="' + esc(c.name) +
+    '" title="' + (two ? esc(wf + ' / ' + wb) : 'this channel has no backward pass') + '">' +
+    '<span class="thumb"></span>' +
+    '<span class="' + (bwd ? '' : 'on') + '" data-d="fwd" data-w="' + esc(wf) + '">' +
+      esc(wf) + '</span>' +
+    '<span class="' + (bwd ? 'on' : '') + '" data-d="bwd" data-w="' + esc(wb) + '">' +
+      esc(wb) + '</span></span>';
+}
+
+/* ── Frame 2D: the panel's history viewer ─────────────────────────────────
+   Each column picks its own (Slow, Fast) frame from two drop-downs, as the
+   panel's second row does, and nothing on it moves by itself (the user,
+   2026-09-23). A frame's image is its own sealed file, fetched the first
+   time it is picked and kept. Drawn in physical frames: X / Y in metres,
+   the frame at the scan controller's centre and angle, the panel's default. */
+/* ONE pick for the whole page: every channel shows the same frame (the user,
+   2026-09-23: pick Slow / Fast once, not per column). */
+const selFrame = {};              // {s, f}, the picked frame
+const frameCache = {};            // frame id -> Promise of the opened frame
+function fetchFrame(id){
+  if(!frameCache[id]){
+    frameCache[id] = (async () => {
+      const url = RAW.replace(/status\.json$/, "f/" + id + ".json");
+      const r = await fetch(url, {cache:"no-store"});
+      if(!r.ok) throw new Error("http " + r.status);
+      return open_(await r.json(), key);
+    })();
+    frameCache[id].catch(() => { delete frameCache[id]; });
+  }
+  return frameCache[id];
+}
+/* The square window the panel's aspect-locked view shows: the rotated
+   frame's bounding box, widened on its short side to a square. */
+function frameView(g){
+  const t = g.angle * Math.PI / 180, c = Math.abs(Math.cos(t)), s = Math.abs(Math.sin(t));
+  const bw = g.w*c + g.h*s, bh = g.w*s + g.h*c, span = Math.max(bw, bh);
+  return {x0: g.cx - span/2, x1: g.cx + span/2, y0: g.cy - span/2, y1: g.cy + span/2};
+}
+function renderFrames(m){
+  LUT = lutOf(m.cmap);
+  const host = $("#plots");
+  const pp = perPage(host.clientWidth || document.body.clientWidth);
+  const pages = Math.max(1, Math.ceil(m.channels.length / pp));
+  page = Math.min(Math.max(0, page), pages - 1);
+  const shown = m.channels.slice(page*pp, page*pp + pp);
+  $("#pager").classList.toggle("hidden", pages < 2);
+  $("#ppage").textContent = (page + 1) + " / " + pages;
+  $("#pprev").disabled = page === 0;
+  $("#pnext").disabled = page >= pages - 1;
+
+  const have = {};
+  for(const fr of m.frames || []) have[fr.s + "," + fr.f] = fr.id;
+  const doneS = new Set((m.frames || []).map(fr => fr.s));
+  const doneF = new Set((m.frames || []).map(fr => fr.f));
+
+  /* The picker: built once per run, its greyed values brought up to date on
+     every refresh. */
+  const fp = $("#fpick");
+  fp.classList.remove("hidden");
+  const pickKey = JSON.stringify([m.slow.values, m.fast.values, m.slow.label, m.fast.label]);
+  if(fp.dataset.k !== pickKey){
+    fp.dataset.k = pickKey;
+    const opts = vals => '<option value="" selected disabled hidden></option>' +
+      vals.map((v, i) => '<option value="' + i + '">' + esc(String(v)) + '</option>').join("");
+    fp.innerHTML = '<label>Slow</label><select data-w="s">' + opts(m.slow.values) +
+      '</select><label>Fast</label><select data-w="f">' + opts(m.fast.values) + '</select>';
+    fp.querySelectorAll("select").forEach(sel => {
+      const cur = selFrame[sel.dataset.w];
+      if(cur !== undefined) sel.value = String(cur);
+      sel.addEventListener("change", () => {
+        selFrame[sel.dataset.w] = +sel.value;
+        if(lastMap) renderFrames(lastMap);
+      });
+    });
+  }
+  /* A value with no finished frame yet is listed but cannot be picked, so
+     the reader sees where the run is going (_populate_history_combos). */
+  fp.querySelectorAll("select").forEach(sel => {
+    const done = sel.dataset.w === "s" ? doneS : doneF;
+    [...sel.options].forEach((o, j) => { if(j > 0) o.disabled = !done.has(j - 1); });
+  });
+
+  const key_ = "frames@" + pp + "@" + page + ":" + shown.map(c => c.name).join(",");
+  if(key_ !== plotKey){
+    plotKey = key_;
+    let html = shown.map((c, k) =>
+      '<div class="chan" data-ch="' + esc(c.name) + '"><div class="chead">' +
+      '<span class="cap">Display channel ' + (page*pp + k + 1) + '</span>' +
+      '<span>' + c.label + '</span>' +
+      (c.unit ? '<span class="u">(' + esc(c.unit) + ')</span>' : '') +
+      segHTML(c, m, true) + '</div>' +
+      '<canvas class="map"></canvas></div>').join("");
+    for(let k = shown.length; k < pp; k++) html += '<div class="chan empty"></div>';
+    host.innerHTML = html;
+  }
+  wireDirs(host);
+  host.querySelectorAll(".seg").forEach(s => placeSegThumb(s, false));
+  host.querySelectorAll(".chan[data-ch]").forEach((el, i) => {
+    const c = shown[i];
+    const cv = el.querySelector("canvas.map");
+    const cw = cv.clientWidth;
+    const inner = Math.max(60, cw - MARG.l - MARG.r);
+    cv.style.height = Math.round(inner + MARG.t + MARG.b) + "px";
+    const pick = selFrame;
+    const id = have[pick.s + "," + pick.f];
+    const v = frameView(m.geom);
+    const view = {geom: m.geom, missing: 255,
+                  fast: {start: v.x0, end: v.x1, label: "X", unit: "m"},
+                  slow: {start: v.y0, end: v.y1, label: "Y", unit: "m"}};
+    const blank = note => drawFrameBlank(cv, c, view, note);
+    if(!id){
+      blank(pick.s === undefined || pick.f === undefined ? "pick Slow and Fast"
+                                                         : "that frame is not finished yet");
+      return;
+    }
+    const want = id + (dirOf[c.name] || "fwd");
+    cv.dataset.want = want;
+    fetchFrame(id).then(fr => {
+      if(cv.dataset.want !== want) return;        // picked something else since
+      const d = (fr.channels || []).find(x => x.name === c.name);
+      if(!d){ blank("not recorded in that frame"); return; }
+      const pass = passOf(Object.assign({}, c, d));
+      Object.assign(view, {rows: fr.rows, cols: fr.cols, missing: fr.missing});
+      drawMap(cv, pass, view);
+    }).catch(() => { if(cv.dataset.want === want) blank("could not fetch that frame"); });
+  });
+}
+/* An empty frame view: the axes and the colour bar's place, and a word on why. */
+function drawFrameBlank(cv, c, view, note){
+  const {g, w, h, css} = setup(cv, c.label);
+  g.fillStyle = css.getPropertyValue("--muted").trim();
+  g.textAlign = "left"; g.textBaseline = "top"; g.font = TICK_FONT;
+  g.fillText(note, MARG.l + 6, MARG.t + 6);
+  frame(g, w, h, css);
+  xAxis(g, css, w, h, view.fast.start, view.fast.end, "X", "m");
+  yAxis(g, css, w, h, view.slow.start, view.slow.end, "Y", "m");
+}
+function renderPlots(m){
+  LUT = lutOf(m.cmap);
+  const host = $("#plots");
+  const pp = perPage(host.clientWidth || document.body.clientWidth);
+  const pages = Math.max(1, Math.ceil(m.channels.length / pp));
+  page = Math.min(Math.max(0, page), pages - 1);
+  const shown = m.channels.slice(page*pp, page*pp + pp);
+
+  $("#pager").classList.toggle("hidden", pages < 2);
+  $("#ppage").textContent = (page + 1) + " / " + pages;
+  $("#pprev").disabled = page === 0;
+  $("#pnext").disabled = page >= pages - 1;
+
+  /* The pass shown is NOT part of the key: a click updates the toggle in
+     place, so its pill can slide instead of the markup being rebuilt under
+     it; every rebuild reads dirOf anyway. */
+  const key = pp + "@" + page + (m.maponly ? "@map" : "") + ":" +
+              shown.map(c => c.name + "|" + c.unit).join(",");
+  if(key !== plotKey){
+    plotKey = key;
+    let html = shown.map((c, k) =>
+      '<div class="chan"><div class="chead">' +
+      '<span class="cap">Display channel ' + (page*pp + k + 1) + '</span>' +
+      '<span>' + c.label + '</span>' +
+      (c.unit ? '<span class="u">(' + esc(c.unit) + ')</span>' : '') +
+      /* The direction toggle stays: the Frame 2D panel has one too, and its
+         sub-files carry "<ch> Fwd" and "<ch> Bwd" columns. What a frame has
+         no room for is a line plot under the image, which its panel does not
+         have either. */
+      (function(){
+        /* Switchable only if THIS channel recorded a backward pass. */
+        const two = c.z_b !== undefined;
+        const bwd = two && dirOf[c.name] === "bwd";
+        /* The words are the run's: an I-V map sweeps its bias Up then Down. */
+        const [wf, wb] = m.dirs || ["Fwd", "Bwd"];
+        return '<span class="seg' + (two ? '' : ' off') + '" data-ch="' +
+          esc(c.name) + '" title="' +
+          (two ? esc(wf + ' / ' + wb) :
+                 'this channel has no backward pass') + '">' +
+          '<span class="thumb"></span>' +
+          '<span class="' + (bwd ? '' : 'on') + '" data-d="fwd" data-w="' + esc(wf) + '">' +
+            esc(wf) + '</span>' +
+          '<span class="' + (bwd ? 'on' : '') + '" data-d="bwd" data-w="' + esc(wb) + '">' +
+            esc(wb) + '</span></span>';
+      })() + '</div>' +
+      '<canvas class="map"></canvas>' +
+      (m.maponly || c.maponly ? '' : '<canvas class="lp"></canvas>') + '</div>').join("");
+    for(let k = shown.length; k < pp; k++) html += '<div class="chan empty"></div>';
+    host.innerHTML = html;
+  }
+  /* Clicking a segment redraws that column from the other pass. Bound on
+     the host so it survives the markup being rebuilt by the pager. */
+  wireDirs(host);
+  host.querySelectorAll(".seg").forEach(s => placeSegThumb(s, false));
+  host.querySelectorAll(".chan").forEach((el, i) => {
+    const c = shown[i];
+    const cmap = el.querySelector("canvas.map"), lp = el.querySelector("canvas.lp");
+    if(!cmap) return;
+    /* A SQUARE DATA AREA. At the panel's own column width this is within a
+       few px of its 640 x 576 map; on a phone, where the margins are a much
+       bigger share of a narrow column, keeping the panel's ratio made the map
+       far taller than it is wide. The line plot stays two thirds of it, which
+       is the panel's 3:2. */
+    /* MEASURED TWICE ON PURPOSE. Giving these a height can make the page
+       long enough for a scrollbar to appear, which narrows the column by
+       the width of the bar AFTER the height was computed from the old
+       width; the map then came out ten pixels taller than it is wide. If
+       setting the height changed the width, do it again with the width
+       that is now true. */
+    const fit = () => {
+      const cw = cmap.clientWidth;
+      const inner = Math.max(60, cw - MARG.l - MARG.r);
+      cmap.style.height = Math.round(inner + MARG.t + MARG.b) + "px";
+      if(lp) lp.style.height = Math.round(inner*2/3 + MARG.t + MARG.b) + "px";
+      return cw;
+    };
+    const first = fit();
+    if(cmap.clientWidth !== first) fit();
+    if(!c) return;
+    const shownPass = passOf(c);
+    /* The panel titles each plot with the pass it shows ("FB Mon - Up"). */
+    if(m.dirs && m.dir_titles) shownPass.title = plainText(c.label) + " - " +
+      m.dirs[dirOf[c.name] === "bwd" ? 1 : 0];
+    drawMap(cmap, shownPass, m);
+    if(lp) drawLine(lp, shownPass, m, page*pp + i);
+  });
+}
+
+/* One timer, re-armed after each answer at the rate the answer deserves: a
+   fixed interval would either poll a finished run every two seconds or make a
+   running one wait twenty. */
+function rearm(live){
+  clearTimeout(timer);
+  /* NOT WHILE NOBODY IS LOOKING. A tab left open behind others kept asking
+     every second and a half, a whole snapshot each time: forty megabytes an
+     hour for a page nobody was reading. Coming back asks at once
+     (visibilitychange). */
+  if(document.hidden){ timer = null; return; }
+  timer = setTimeout(tick, live ? paceLive() : paceIdle());
+}
+
+/* The log's word for a state -> the lamp class and the word to print.
+   "unknown" is NOT "off": the log has said nothing about that instrument, and
+   claiming it is off would be a reading nobody took. */
+const INST_STATE = {
+  on:         ["on",         "Connected"],
+  error:      ["error",      "Not Connected"],
+  connecting: ["connecting", "Connecting"],
+  unknown:    ["off",        "Not Seen"],
+};
+
+/* The footer, the main window's version line and lab line: the version as a
+   small chip, the date beside it, the lab under them with its mark. */
+function renderFoot(f){
+  const el = $("#foot");
+  if(!f || !f.version){ el.classList.add("hidden"); return; }
+  el.classList.remove("hidden");
+  /* ONE LINE, as compact as the main window's own (the user, 2026-09-23):
+     the version, the date, the lab, dot-separated; it wraps only when a
+     phone is too narrow for it. */
+  el.innerHTML = [
+      '<span class="fver">Version ' + esc(f.version) + '</span>',
+      f.updated ? '<span>Last updated ' + esc(f.updated) + '</span>' : '',
+      f.lab ? '<span>' + esc(f.lab) + '</span>' : '']
+    .filter(Boolean).join('<span class="fdot">\u00b7</span>');
+}
+/* What this device is, from the browser's own description of itself. */
+const DEV_PHONE = '<svg viewBox="0 0 24 24"><path d="M17 1H7C5.9 1 5 1.9 5 3v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm-5 20.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4zM17 18H7V4h10v14z"/></svg>';
+const DEV_DESK = '<svg viewBox="0 0 24 24"><path d="M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h6v2H8v2h8v-2h-2v-2h6c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11z"/></svg>';
+function deviceInfo(){
+  const ua = navigator.userAgent || "";
+  const os = /iPhone/.test(ua) ? "iPhone" : /iPad/.test(ua) ? "iPad"
+           : /Android/.test(ua) ? "Android" : /Mac OS X/.test(ua) ? "Mac"
+           : /Windows/.test(ua) ? "Windows" : /Linux/.test(ua) ? "Linux" : "Device";
+  const br = /Edg\//.test(ua) ? "Edge" : /OPR\//.test(ua) ? "Opera"
+           : /Chrome\//.test(ua) ? "Chrome" : /Firefox\//.test(ua) ? "Firefox"
+           : /Safari\//.test(ua) ? "Safari" : "Browser";
+  return {name: br + " on " + os, mobile: /iPhone|Android.*Mobile/.test(ua)};
+}
+/* THE ACCOUNT PAGE: who this is, then two short groups, what this page is
+   and what this device keeps (the user, 2026-09-23: "more modern"). Drawn
+   once and then only its values change, so a refresh never moves a button
+   from under a finger. */
+function renderAccount(s){
+  const b = BRAND_OPEN || {};
+  const cfg = ((s.run || {}).config) || [];
+  const sysRow = cfg.find(e => e.key === "System");
+  const name = b.user || "\u2013";
+  const system = (sysRow && sysRow.value) || (s.app || {}).system || "";
+  const initials = String(b.user || "?").trim().split(/\s+/).map(w => w[0] || "")
+                     .join("").slice(0, 2).toUpperCase();
+  let saved = false;
+  try { saved = !!localStorage.getItem(STORE); } catch(e){}
+  const host = $("#account");
+  if(!host.querySelector(".acc")){
+    host.innerHTML =
+      '<div class="acc">' +
+        '<div class="acchead"><div class="avatar"></div>' +
+          '<div><div class="accname"></div><div class="accsub"></div></div></div>' +
+        /* "THIS DEVICE", not "Devices" (the user, 2026-09-26): a list heading
+           over one row read as a list with the others missing. There are no
+           others to show: the page only ever reads, so nothing anywhere
+           records where somebody has signed in. */
+        '<div class="accgrp"><div class="acccap">This device</div><div class="acclist">' +
+          '<div class="accrow dev"><span class="devico"></span>' +
+            '<span class="devtxt"><span class="devname"></span><span class="devsub"></span></span>' +
+            '<button class="accbtn danger" id="forget">Forget</button></div>' +
+        '</div><div class="accnote">Forgetting signs this device out; your NetID and ' +
+          'passphrase will be asked for again. Nothing on the lab PC changes.</div>' +
+        '<div class="accnote">Other devices are not listed: this page sends nothing ' +
+          'back, so nothing records where you have signed in. To sign out everywhere, ' +
+          'ask for a new passphrase.</div></div>' +
+      '</div>';
+    $("#forget").addEventListener("click", () => {
+      try { localStorage.removeItem(STORE); } catch(e){}
+      location.reload();
+    });
+  }
+  host.querySelector(".avatar").textContent = initials;
+  host.querySelector(".accname").textContent = name;
+  host.querySelector(".accsub").textContent =
+    [b.netid, system, "Remote View"].filter(Boolean).join(" \u00b7 ");
+  /* THIS DEVICE, the one row this page can vouch for: what it is, read off
+     the browser, and whether it stays signed in. */
+  const dv = deviceInfo();
+  host.querySelector(".devico").innerHTML = dv.mobile ? DEV_PHONE : DEV_DESK;
+  host.querySelector(".devname").textContent = dv.name;
+  host.querySelector(".devsub").textContent =
+    saved ? "Stays signed in" : "Signs out when the tab closes";
+}
+
+function renderInsts(d){
+  const host = $("#insts");
+  if(!d || !d.available){
+    host.innerHTML = row("No instrument roster", "Not in the log");
+    return;
+  }
+  const items = d.items || [];
+  morph(host, items.map(i => {
+    const [cls, word] = INST_STATE[i.state] || INST_STATE.unknown;
+    return '<div class="irow" title="' + esc(i.detail || "") + '">' +
+             '<span class="led ' + cls + '"></span>' +
+             '<span class="nm">' + esc(i.name) + '</span>' +
+             '<span class="st">' + word + (i.when ? ' &middot; ' + esc(i.when) : '') +
+           '</span></div>';
+  }).join("") +
+  '<div class="foot">' + (d.up || 0) + ' of ' + (d.total || items.length) +
+  ' Connected</div>');
+}
+
+/* The chevron of a collapsible section, ui_style.draw_chevron's geometry. */
+const SEC_CHEV = '<svg viewBox="0 0 24 24"><path d="M8.3 4.8 L15.7 12 L8.3 19.2"/></svg>';
+/* The Approach panel's section mark: a small filled navy triangle. */
+const SEC_TRI = '<svg class="tri" viewBox="0 0 10 10"><path d="M2 1 L8 5 L2 9 Z"/></svg>';
+/* The same chevron turned down: an open run row in the records list. */
+const SEC_CHEV_OPEN = '<svg class="chev" viewBox="0 0 24 24"><path d="M4.8 8.3 L12 15.7 L19.2 8.3"/></svg>';
+
+/* Which entries the reader has opened, kept across refreshes the way the
+   run's own sections are: a list that collapsed itself every few seconds
+   would be unusable. */
+const xlogOpen = new Set();
+
+function renderXlog(x){
+  const host = $("#xlog");
+  if(!x || !x.available){
+    host.innerHTML = row("No experiment log", "not found");
+    return;
+  }
+  const entries = x.entries || [];
+  if(!entries.length){
+    host.innerHTML = row("No entries yet", "\u2013");
+    return;
+  }
+  morph(host, entries.map((e, i) => {
+    const id = (e.day || "") + " " + (e.time || "") + " " + (e.name || "");
+    const open = xlogOpen.has(id);
+    let body = (e.fields || []).map(([k, v]) => row(esc(k), esc(v))).join("");
+    /* The section NAMES used to be listed here. The page does not show the
+       sections themselves, so naming them promised something it does not do
+       (the user, 2026-09-23). */
+    return '<div class="sec' + (open ? " open" : "") + '" data-x="' + esc(id) + '">' +
+             SEC_CHEV + '<span class="nm">' + esc(e.name || "\u2013") + '</span>' +
+             '<span class="when">' + esc(e.day || "") + ' ' + esc(e.time || "") +
+             '</span></div>' +
+           '<div class="body' + (open ? "" : " shut") + '"><div class="in">' + body +
+           '</div></div>';
+  }).join("") +
+  '<div class="foot">' + entries.length + ' of ' + (x.total || entries.length) +
+  ' entries</div>');
+}
+/* ONE listener per list, on the list, bound once: the rows under it are
+   updated in place and must not collect a listener per refresh. The open set
+   is the truth; the classes follow it now and on every refresh after. */
+function wireSections(host, openSet, attr){
+  host.addEventListener("click", ev => {
+    const el = ev.target.closest(".sec");
+    if(!el || !host.contains(el)) return;
+    const k = el.dataset[attr];
+    openSet.has(k) ? openSet.delete(k) : openSet.add(k);
+    el.classList.toggle("open", openSet.has(k));
+    const body = el.nextElementSibling;
+    if(body && body.classList.contains("body")) body.classList.toggle("shut", !openSet.has(k));
+  });
+}
+
+/* ---------- the system log ----------------------------------------------- */
+/* Oldest first with the newest at the BOTTOM, and follow it, because that is
+   the Global System Log's own order. The source tag at the head of a line is
+   navy on every line, including a warning or an error: only the body takes
+   the level colour. */
+const LOG_TAG = /^([\[(][^\])]{1,40}[\])])\s*/;
+function logLineHTML(l){
+  const mm = LOG_TAG.exec(l.text || "");
+  const tag = mm ? '<span class="g">' + esc(mm[1]) + '</span> ' : "";
+  const body = mm ? (l.text || "").slice(mm[0].length) : (l.text || "");
+  return '<div><span class="t">' + esc(l.time) + '</span>' + tag +
+         '<span class="' + esc(l.level) + '">' + esc(body) + '</span></div>';
+}
+/* THE LOG MOVES THE WAY THE APP'S DOES (Widgets: log follow glide). The
+   publisher sends the newest lines, so from one push to the next some fall
+   off the top and some arrive at the bottom. The lines still there keep
+   their places, the new ones are added under them, and a reader who was at
+   the end is carried down to it smoothly; one who had scrolled up to read is
+   left exactly where they were. Lines are matched on time, text and level. */
+let logKeys = [];
+function renderLog(lines){
+  const box = $("#log");
+  const keys = lines.map(l => [l.time, l.text, l.level].join("\u0001"));
+  const wasAtEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 4;
+  /* how many old lines went off the top: what is left of the old list must
+     be where the new one starts */
+  let drop = -1;
+  for(let k = 0; k <= logKeys.length && drop < 0; k++){
+    const rest = logKeys.length - k;
+    if(rest > keys.length) continue;
+    let same = true;
+    for(let i = 0; i < rest && same; i++) same = logKeys[k + i] === keys[i];
+    if(same) drop = k;
+  }
+  if(drop < 0 || box.children.length !== logKeys.length){
+    box.innerHTML = lines.map(logLineHTML).join("");
+    if(wasAtEnd) box.scrollTop = box.scrollHeight;
+  } else if(drop > 0 || keys.length > logKeys.length){
+    box.insertAdjacentHTML("beforeend",
+      lines.slice(logKeys.length - drop).map(logLineHTML).join(""));
+    let lost = 0;
+    for(let i = 0; i < drop; i++){
+      lost += box.firstElementChild.offsetHeight;
+      box.firstElementChild.remove();
+    }
+    if(lost) box.scrollTop = Math.max(0, box.scrollTop - lost);
+    if(wasAtEnd) box.scrollTo({top: box.scrollHeight, behavior: "smooth"});
+  }
+  logKeys = keys;
+}
+
+/* ---------- the front panel ---------------------------------------------- */
+/* PROGRESS_QSS's groove with its own caption centred on it. One definition,
+   used by the run's section and by the run's row on the front panel, so the
+   two can never drift apart. */
+/* ── the panel's run-info grid ─────────────────────────────────────────────
+   Each cell knows the row, column and span it had in the QGridLayout, so the
+   page puts it back there: captions in columns 0 and 3, values in 1 and 4,
+   and a progress bar across 0..2. The publisher sends the panel's own cells
+   when the app is running and a reconstruction from the run file when it is
+   not; both arrive in this one shape, so there is one renderer. */
+function renderRuntime(cells){
+  const host = $("#runtime");
+  host.classList.toggle("hidden", !cells.length);
+  if(!cells.length){ host.innerHTML = ""; return; }
+  /* CSS grid lines count from one, and a column the panel left empty must
+     stay empty, so every cell is placed rather than flowed. In place, so the
+     bars in it glide. */
+  morph(host, cells.map(c => {
+    const at = 'grid-row:' + (c.r + 1) + '; grid-column:' + (c.c + 1) +
+               ' / span ' + Math.max(1, c.cs || 1) + ';';
+    if(c.kind === "bar"){
+      return '<div class="bar' + ((c.frac || 0) >= 1 ? ' full' : '') +
+             '" style="' + at + '">' +
+             '<div class="fill" style="width:calc(' +
+             (Math.max(0, Math.min(1, c.frac || 0))*100).toFixed(2) +
+             '% - 2px)"></div><div class="cap">' + esc(c.text || "") +
+             '</div></div>';
+    }
+    const cls = c.kind === "cap" ? "k" : "v";
+    return '<span class="' + cls + '" style="' + at + '">' + esc(c.text || "") +
+           (c.unit ? '<span class="u">' + esc(c.unit) + '</span>' : '') +
+           '</span>';
+  }).join(""));
+}
+
+function barHTML(pct, cap){
+  pct = Math.max(0, Math.min(1, pct || 0));
+  return '<div class="bar' + (pct >= 1 ? ' full' : '') + '">' +
+         '<div class="fill" style="width:calc(' + (pct*100).toFixed(2) +
+         '% - 2px)"></div><div class="cap">' + cap + '</div></div>';
+}
+
+/* Wide enough for everything at once? The same width the plots stop paging
+   at, so the page has one idea of "narrow" rather than two. */
+const WIDE = 860;
+const wide = () => window.innerWidth >= WIDE;
+
+//: module id -> the name on its row, in the order they are listed
+const MODULES = [
+  ["m-experiment", "Experiment"],
+  ["m-fridge",     "Fridge Status"],
+  ["m-insts",      "Instrument Connections"],
+  ["m-log",        "System Log"],
+  ["m-xlog",       "Experiment Log"],
+];
+/* Pages that are NOT modules: no row on the front panel, never laid out
+   with the monitoring, reached only by their own control. */
+const EXTRA = ["m-account"];
+const ROUTABLE = () => MODULES.map(m => m[0]).concat(EXTRA);
+
+let route = null;            // which page is open, if any
+let lastSnap = null;         // the last snapshot, for redrawing the rows
+
+const CHEV = '<svg viewBox="0 0 24 24"><path d="M8.3 4.8 L15.7 12 L8.3 19.2"/></svg>';
+
+/* What a module puts on its own row: the one reading that says whether it
+   needs opening. */
+function summary(id, s){
+  const r = s.run || {};
+  if(id === "m-experiment"){
+    let out = '<div class="modread">' +
+              (r.experiment ? esc(r.experiment)
+                            : '<span class="dim">no run yet</span>') + '</div>';
+    /* ONE BAR on the front panel, the big one (the user, 2026-09-23). The
+       app sends the Total bar's own caption and fill when it is running;
+       otherwise it is rebuilt from the counts. */
+    const hb = r.home_bar;
+    if(Array.isArray(hb)){
+      out += barHTML(hb[1] || 0, esc(String(hb[0] || "")));
+    } else {
+      const B = r.bars;
+      if(B && B.total && B.total[1]){
+        out += barHTML(B.total[0] / B.total[1],
+                       B.total[0] + ' / ' + B.total[1]);
+      }
+    }
+    return out;
+  }
+  if(id === "m-fridge"){
+    const f = s.fridge || {};
+    if(!f.available) return '<div class="modread dim">not on this system</div>';
+    const L = f.latest || {};
+    const bits = [];
+    if(L.temperature_k != null) bits.push(num(L.temperature_k) + " K");
+    if(L.gauge1_torr != null) bits.push(num(L.gauge1_torr) + " Torr");
+    const stale = ' ' + agoSpan(f.age_s, 60, true);
+    return '<div class="modread">' +
+           (bits.length ? bits.join(" &middot; ")
+                        : '<span class="dim">no reading</span>') + stale + '</div>';
+  }
+  if(id === "m-insts"){
+    const d = s.insts || {};
+    if(!d.available) return '<div class="modread dim">No roster</div>';
+    const items = d.items || [];
+    const lamps = '<span class="lamps">' + items.map(i =>
+      '<span class="led ' + (INST_STATE[i.state] || INST_STATE.unknown)[0] +
+      '"></span>').join("") + '</span>';
+    return '<div class="modread">' + lamps +
+           (d.up || 0) + ' of ' + (d.total || items.length) + ' Connected</div>';
+  }
+  if(id === "m-xlog"){
+    const x = s.explog || {};
+    const e = (x.entries || [])[0];
+    if(!x.available) return '<div class="modread dim">no log file</div>';
+    if(!e) return '<div class="modread dim">nothing logged yet</div>';
+    return '<div class="modread"><span class="dim">' + esc(e.day) + '</span> ' +
+           esc(e.name) + '</div>';
+  }
+  if(id === "m-log"){
+    const lines = (s.log || {}).lines || [];
+    const last = lines[lines.length - 1];
+    if(!last) return '<div class="modread dim">nothing logged</div>';
+    return '<div class="modread"><span class="dim">' + esc(last.time) + '</span> ' +
+           esc(last.text || "") + '</div>';
+  }
+  return "";
+}
+
+function renderHome(s){
+  /* The run's row carries the same heading its page does: "Experiment in
+     progress" while one runs, "Last Experiment" after (the user, 2026-09-23). */
+  const runName = ((s.run || {}).active) ? "Experiment in progress" : "Last Experiment";
+  morph($("#home"), MODULES.map(([id, name]) =>
+    [id, id === "m-experiment" ? runName : name]).map(([id, name]) =>
+    '<button class="modrow" data-go="' + id + '">' +
+      '<div class="modname"><span>' + esc(name) + '</span>' + CHEV + '</div>' +
+      summary(id, s) +
+    '</button>').join(""));
+}
+
+/* Show what this width and this route call for. Nothing here rebuilds a
+   section; it only decides which are on screen. */
+/* THE LOG FITS THE SCREEN when it is the page on its own: its box runs down
+   to the bottom of the window, where the Global System Log fills its panel
+   (the user, 2026-09-23). Laid out with the other modules it keeps its
+   fixed height. */
+function fitLog(){
+  const box = $("#log");
+  if(!box) return;
+  if(route === "m-log" && !box.closest(".hidden")){
+    const top = box.getBoundingClientRect().top + window.scrollY;
+    box.style.height = Math.max(160, window.innerHeight - top - 24) + "px";
+    box.style.maxHeight = "none";
+  } else {
+    box.style.height = ""; box.style.maxHeight = "";
+  }
+}
+function applyRoute(){
+  const w = wide();
+  /* A page is open: show only it, whatever the width, and offer the way
+     back. Otherwise a wide screen lays out every module and a narrow one
+     shows the front panel. */
+  const onPage = route !== null;
+  $("#home").classList.toggle("hidden", w || onPage);
+  $("#backbar").classList.toggle("hidden", !onPage);
+  ROUTABLE().forEach(id => {
+    const el = $("#" + id);
+    if(!el) return;
+    const show = onPage ? (route === id)
+                        : (w && EXTRA.indexOf(id) === -1);
+    el.classList.toggle("hidden", !show);
+  });
+  fitLog();
+}
+
+/* A hidden canvas has no width, so a plot drawn while its module was closed
+   drew into nothing. Opening one redraws it. */
+function redrawOpen(){
+  if(!lastMap) return;
+  renderAny(lastMap);
+}
+
+/* The tab change: 150 ms of dissolve with 8 px of travel. */
+function arrive(el, from){
+  if(!el) return;
+  el.style.transition = "none";
+  el.style.opacity = "0";
+  el.style.transform = "translateY(" + from + ")";
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    el.style.transition = "opacity var(--t-tab) var(--ease), " +
+                          "transform var(--t-tab) var(--ease)";
+    el.style.opacity = "1";
+    el.style.transform = "translateY(0)";
+  }));
+}
+
+function go(id){
+  route = id;
+  const w = wide();
+  $("#backword").textContent = w ? "Back" : "All modules";
+  applyRoute();
+  window.scrollTo(0, 0);
+  /* Drawn BEFORE it is faded in: a plot sized while its module was hidden
+     has no width, and the fade would then be a fade onto an empty frame. */
+  if(id === "m-experiment") redrawOpen();
+  arrive($("#" + id), "var(--travel)");
+}
+
+function home(){
+  route = null;
+  applyRoute();
+  window.scrollTo(0, 0);
+  if(lastSnap) renderHome(lastSnap);
+  /* Coming back moves the other way. */
+  arrive(wide() ? null : $("#home"), "calc(var(--travel) * -1)");
+  /* Coming back on a wide screen reveals every module at once, and the plots
+     in them have not been drawn at this width since they were hidden. */
+  if(wide()) redrawOpen();
+}
+
+/* A refresh that fails keeps what is on screen and says why beside its age,
+   rather than blanking the state it last knew. */
+function trouble(why){
+  fetchTrouble = why;
+  if(sealT == null) $("#head").innerHTML = '<span class="stale">' + esc(why) + '.</span>';
+  else tickAges();
+}
+async function tick(force, pre){
+  let blob, s;
+  /* A refresh that did not arrive is tried again at the pace the run is
+     going at, not dropped to the idle one: one lost request in the middle
+     of a sweep used to cost ten seconds. */
+  try { blob = pre || await fetchBlob(); }
+  catch(e){ trouble("Cannot reach GitHub"); rearm(runActive); return; }
+  fetchTrouble = "";
+  /* THE SAME PUSH AGAIN. The page asks more often than the lab PC pushes, so
+     most answers are the push already on screen: nothing to open, nothing to
+     redraw. Only the ages move. */
+  if(!force && blob.iv && blob.iv === lastIv){
+    tickAges();
+    rearm(runActive);
+    return;
+  }
+  try { s = await open_(blob, key); }
+  catch(e){
+    /* THE SECRET WAS CHANGED UNDER AN OPEN PAGE: taking someone off seals
+       everything after it under a new secret, and every other reader's page
+       used to stop at "Cannot open the data" until it was reloaded. The
+       reader's own slot in the new block opens it again, if they still have
+       one. Tried once per push, so a reader who was taken off does not pay a
+       key derivation every refresh. */
+    if(cred && blob.iv !== rekeyTried){
+      rekeyTried = blob.iv;
+      try {
+        const who = await openSlot(blob.slots, cred.n, cred.p);
+        if(who && who.s){
+          const k2 = await deriveKey(who.s, b64(blob.salt));
+          s = await open_(blob, k2);
+          key = k2;
+          for(const id of Object.keys(frameCache)) delete frameCache[id];
+        }
+      } catch(e2){ s = undefined; }
+    }
+    if(!s){ trouble("Cannot open the data"); rearm(runActive); return; }
+  }
+  /* How long the last push took to follow the one before: a progress bar
+     glides over that long, so it creeps on as the panel's does instead of
+     jumping once a push. */
+  const gap = (sealT != null && blob.t > sealT) ? blob.t - sealT : 0;
+  document.documentElement.style.setProperty("--glide",
+    (gap > 0 && gap <= 8) ? Math.round(gap * 1000) + "ms" : "220ms");
+  document.documentElement.style.setProperty("--glide-ease",
+    (gap > 0 && gap <= 8) ? "linear" : "cubic-bezier(.22,.61,.36,1)");
+  lastIv = blob.iv;
+  sealT = blob.t || nowS();
+  runActive = !!((s.run || {}).live || (s.run || {}).active);
+  rearm(runActive);
+
+  /* The lab PC stamps every push. If that stamp stops moving, the app or the
+     publisher has stopped and the numbers below are history. Say so plainly:
+     a stale reading that looks live is the one dangerous failure of a page
+     you check at 3 a.m. The pill carries the phrase, the age goes beside it,
+     because a status pill in this app never carries a number. */
+  const age = sinceSeal();
+  const app = s.app || {};
+  const cfgList = ((s.run || {}).config) || [];
+  const sysRow = cfgList.find(e => e.key === "System");
+  const system = (sysRow && sysRow.value) || app.system || "";
+  const what = age > SILENT_S ? ["red", "Not reporting"]
+             : app.running ? ["blue", "App running"]
+                           : ["red", "App not running"];
+  const pill = '<span class="pill ' + what[0] + '">' + what[1] +
+               (system ? ' &middot; ' + esc(system) : '') + '</span>';
+  morph($("#head"), pill + freshHTML());
+  /* THE MAIN WINDOW'S SAFETIP NOTICE, word for word, while it is up there:
+     the trip sentence with the run's name in bold. Only <b> survives from
+     the app's markup. It goes when the trip is acknowledged in the app. */
+  const st = s.safetip;
+  $("#safetip").classList.toggle("hidden", !st);
+  $("#safetip").innerHTML = st ? '<span class="stnotice">' +
+    esc(st.text || "SafeTip triggered").replace(/&lt;(\/?)b&gt;/g, "<$1b>") +
+    '</span>' : "";
+
+  /* the lamps, in the panel's order and with the panel's own legends */
+  const LEDS = [
+    ["safetip", "SafeTip Guard", "error: SafeTip triggered.  off: clear"],
+    ["poking",  "Poking",        "on: poking.  error: poke failed.  off: idle"],
+    ["measuring", "Measuring",   "on: measuring.  off: idle"],
+  ];
+  const leds = (s.run || {}).leds || {};
+  /* THE LAMPS THIS PANEL HAS. The run says so when its panel differs from
+     the sweep panels' three; a key starting "?" is a lamp no file reports,
+     so it stays grey and says why. */
+  const set = Array.isArray((s.run || {}).led_set) ? (s.run || {}).led_set : LEDS;
+  morph($("#leds"), set.map(([k, caption, tip]) =>
+    '<span class="grp" title="' + esc(tip) + '">' +
+    '<span class="led ' + esc(k.charAt(0) === "?" ? "off" : (leds[k] || "off")) +
+    '"></span><span>' + esc(caption) + '</span></span>').join(""));
+
+  const r = s.run || {};
+  /* A NEW RUN STARTS CLEAN (the user, 2026-09-23): every Up/Down or Fwd/Bwd
+     toggle back on its first pass and the plots back on page one, rather than
+     carrying what was picked for the previous file. */
+  if(r.file !== lastRunFile){
+    if(lastRunFile !== undefined){
+      for(const k of Object.keys(dirOf)) delete dirOf[k];
+      for(const k of Object.keys(selFrame)) delete selFrame[k];
+      mapViews.pop = null; mapViews.xy = null;
+      $("#fpick").dataset.k = "";          // rebuilt with nothing picked
+      page = 0; plotKey = "";
+    }
+    lastRunFile = r.file;
+  }
+  /* Whether this is happening NOW or is the last thing that did, and which
+     experiment it is, off to the right. */
+  $("#runhead").textContent = r.active ? "Experiment in progress"
+                                       : "Last Experiment";
+  $("#runwhat").textContent = r.experiment || "";
+  /* The bars live in the run-info grid now, beside the rate that belongs to
+     each (renderRuntime). This block is kept only for a payload published by
+     an older build, which has bars and no grid. */
+  /* Poke on Path carries its bar over its map, as its panel does. */
+  const B = ((r.runtime || []).length || (r.map && (r.map.pop || r.map.kind === "approach")))
+            ? null : r.bars;
+  morph($("#bars"), !B ? "" :
+    [["Total", B.total], ["Line", B.line]]
+      .filter(([, b]) => Array.isArray(b))
+      .map(([name, [v, mx]]) =>
+        barHTML(mx ? v/mx : 0, name + '&nbsp;&nbsp;' + v + ' / ' + mx)).join(""));
+  if(!r.file){}
+  else{
+    const m = r.map;
+    $("#fpick").classList.toggle("hidden", !(m && m.kind === "frames"));
+    if(m) m.bwd = !/raster/i.test(r.scan_mode || "")
+                  && !/^forward$/i.test(r.direction || "");
+    if(m && m.kind === "curves"){
+      $("#plots").classList.remove("hidden");
+      $("#legacy").classList.add("hidden");
+      $("#plots").style.flexWrap = "";
+      $("#plots").style.flexDirection = "";
+      $("#plots").style.alignItems = "";
+      lastMap = m;
+      renderCurves(m);
+    } else if(m && m.kind === "records"){
+      /* a run that is a list of what happened, not a grid of what was measured */
+      $("#plots").classList.remove("hidden");
+      $("#legacy").classList.add("hidden");
+      lastMap = m;
+      renderRecords(m);
+    } else if(m && m.kind === "approach"){
+      /* the Approach panel's two halves */
+      $("#plots").classList.remove("hidden");
+      $("#legacy").classList.add("hidden");
+      m._leds = r.leds || {};
+      lastMap = m;
+      renderApproach(m);
+    } else if(m && m.kind === "frames"){
+      /* a frame run: the reader picks which frame each column shows */
+      $("#plots").classList.remove("hidden");
+      $("#legacy").classList.add("hidden");
+      $("#plots").style.flexWrap = "";
+      $("#plots").style.flexDirection = "";
+      $("#plots").style.alignItems = "";
+      lastMap = m;
+      renderFrames(m);
+    } else if(m && (m.channels || []).length){
+      $("#plots").classList.remove("hidden");
+      $("#legacy").classList.add("hidden");
+      $("#plots").style.flexWrap = "";
+      $("#plots").style.flexDirection = "";
+      $("#plots").style.alignItems = "";
+      lastMap = m;
+      renderPlots(m);
+    } else {
+      /* not a 2D sweep: keep the one picked column */
+      $("#plots").classList.add("hidden");
+      $("#legacy").classList.remove("hidden");
+      lastMap = null;
+      const cols = r.columns || [];
+      if(cols.join("|") !== lastCols){
+        lastCols = cols.join("|");
+        $("#col").innerHTML = cols.map((c,i) => '<option value="'+i+'">'+esc(c)+'</option>').join("");
+        chosen = Math.min(cols.length-1, cols[0] && cols[0].toLowerCase()==="index" ? 3 : 1);
+        $("#col").value = chosen;
+      }
+      draw(r.trace || [], chosen == null ? 1 : chosen);
+    }
+  }
+
+  /* THE RUN'S OWN HEADER, section by section, exactly as written. Nothing
+     here is re-worded: the page shows what the .dat says. */
+  const cfg = ((s.run || {}).config) || [];
+  let seen = null, chtml = "", open = false;
+  for(const e of cfg){
+    if(e.section !== seen){
+      if(open){ chtml += '</div></div>'; open = false; }
+      seen = e.section;
+      if(seen){
+        const isOpen = cfgOpen.has(seen);
+        chtml += '<div class="sec' + (isOpen ? ' open' : '') +
+          '" data-sec="' + esc(seen) + '">' +
+          '<svg viewBox="0 0 24 24"><path d="M8.3 4.8 L15.7 12 L8.3 19.2"/></svg>' +
+          esc(seen) + '</div><div class="body' + (isOpen ? '' : ' shut') + '"><div class="in">';
+        open = true;
+      }
+    }
+    chtml += row(esc(e.key), esc(e.value));
+  }
+  if(open) chtml += '</div></div>';
+  /* In place, so a section opening under the reader's finger keeps its
+     element and finishes its animation; the clicks are the host's. */
+  morph($("#cfg"), chtml);
+
+  const f = s.fridge || {};
+  if(!f.available){ morph($("#fridge"), row("No environment log", "not on this system")); }
+  else{
+    const L = f.latest || {};
+    let html = row("Temperature", num(L.temperature_k), "K");
+    html += row("Gauge 1", num(L.gauge1_torr), "Torr");
+    html += row("Gauge 2", num(L.gauge2_torr), "Torr");
+    html += row("Turbo", num(L.turbo_pct), "%");
+    html += row("Flow", num(L.mfc_flow), "sccm");
+    /* counted on between pushes: the sample does not get younger because
+       nothing new has been pushed since */
+    html += row("Last sample", agoSpan(f.age_s, 60, false));
+    morph($("#fridge"), html);
+  }
+
+  renderLog((s.log || {}).lines || []);
+
+  renderRuntime((s.run || {}).runtime || []);
+
+  renderAccount(s);
+  renderFoot(s.footer);
+  renderInsts(s.insts);
+  renderXlog(s.explog);
+
+  /* and the rows on the front panel, which is on screen only when narrow */
+  lastSnap = s;
+  renderHome(s);
+  applyRoute();
+}
+/* forced: the data has not changed, the column asked for has */
+$("#col").addEventListener("change", e => { chosen = +e.target.value; tick(true); });
+$("#home").addEventListener("click", ev => {
+  const b = ev.target.closest(".modrow");
+  if(b) go(b.dataset.go);
+});
+wireSections($("#cfg"), cfgOpen, "sec");
+wireSections($("#xlog"), xlogOpen, "x");
+/* PagedStrip's 260 ms, as a slide: out in the direction of travel, redraw,
+   then in from the other side. The halves are equal so the page turns at one
+   speed rather than snapping at the join. */
+let paging = false;
+function repage(step){
+  if(!lastMap || paging) return;
+  const host = $("#plots");
+  const half = 130;
+  const away = step > 0 ? -1 : 1;
+  paging = true;
+  host.style.transition = "transform " + half + "ms var(--ease), opacity " +
+                          half + "ms var(--ease)";
+  host.style.transform = "translateX(calc(var(--travel) * " + away + "))";
+  host.style.opacity = "0";
+  setTimeout(() => {
+    page = Math.max(0, page + step);
+    renderAny(lastMap);
+    host.style.transition = "none";
+    host.style.transform = "translateX(calc(var(--travel) * " + (-away) + "))";
+    /* Two frames: one for the jump to the far side to take effect without a
+       transition, one to start the transition back. */
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      host.style.transition = "transform " + half + "ms var(--ease), opacity " +
+                              half + "ms var(--ease)";
+      host.style.transform = "translateX(0)";
+      host.style.opacity = "1";
+      setTimeout(() => {
+        host.style.transition = host.style.transform = "";
+        paging = false;
+      }, half + 20);
+    }));
+  }, half);
+}
+$("#backbar").addEventListener("click", home);
+$("#gouser").addEventListener("click", () => go("m-account"));
+$("#themeseg").querySelectorAll("button").forEach(b => {
+  b.addEventListener("click", () => setTheme(b.dataset.mode));
+});
+/* "Follow system" has to keep following it. */
+if(window.matchMedia){
+  const mq = matchMedia("(prefers-color-scheme: dark)");
+  const onChange = () => { if(themeMode() === "system") applyTheme("system"); };
+  mq.addEventListener ? mq.addEventListener("change", onChange)
+                      : mq.addListener(onChange);
+}
+applyTheme(themeMode());
+$("#pprev").addEventListener("click", () => repage(-1));
+$("#pnext").addEventListener("click", () => repage(+1));
+
+/* A remembered passphrase makes this a page you glance at, not one you log
+   into. It lives in this browser only and never leaves it. */
+(function(){
+  let saved = null;
+  try { saved = localStorage.getItem(STORE); } catch(e){}
+  /* NetID and passphrase, remembered together. A bare string is the old
+     single passphrase, which no longer opens anything: forget it. */
+  let rec = null;
+  try { rec = saved ? JSON.parse(saved) : null; } catch(e){ rec = null; }
+  /* A remembered sign-in that does not open anything puts the card back. */
+  const showCard = () => { delete document.documentElement.dataset.auto; };
+  if(rec && rec.n && rec.p){
+    $("#netid").value = rec.n; $("#pass").value = rec.p;
+    unlock(rec.n, rec.p, true).then(okk => { if(!okk) showCard(); }, showCard);
+  } else {
+    if(saved){ try { localStorage.removeItem(STORE); } catch(e){} }
+    showCard();
+  }
+})();
+/* Coming back to the tab after a while should not show a stale number. */
+document.addEventListener("visibilitychange", () => {
+  if(!document.hidden && key) tick();
+});
+/* A canvas holds pixels, not a layout: turning the phone or changing its text
+   size changes the CSS width underneath it and the drawing has to be redone. */
+let resizeWait = null;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeWait);
+  resizeWait = setTimeout(() => {
+    /* WIDENING PUTS THE MONITORING BACK. A module was opened on its own only
+       because there was no room for the rest; once there is, showing one of
+       five in a thousand pixels is worse than showing all five. The account
+       page is different: it was asked for, so widening leaves it alone. */
+    if(wide() && route !== null && EXTRA.indexOf(route) === -1) route = null;
+    /* Crossing the breakpoint changes WHICH sections exist on screen, and a
+       plot in one that has just appeared has never been drawn at this size. */
+    applyRoute();
+    if(lastSnap) renderHome(lastSnap);
+    if(!lastMap) return;
+    renderAny(lastMap);
+  }, 150);
+});
+</script></body></html>
